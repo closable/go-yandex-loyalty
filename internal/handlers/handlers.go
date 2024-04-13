@@ -90,7 +90,7 @@ func (ah *APIHandler) Register(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-
+	fmt.Printf("!!! register info %s  %s ", req.Login, req.Password)
 	err = ah.db.AddUser(req.Login, req.Password)
 	if err != nil {
 		httpErr, ok := err.(*errors_api.APIHandlerError)
