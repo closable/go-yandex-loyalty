@@ -69,7 +69,7 @@ func (ah *APIHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil || len(body) == 0 {
-		fmt.Println("Err body")
+		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -84,17 +84,7 @@ func (ah *APIHandler) Register(w http.ResponseWriter, r *http.Request) {
 	if err := ah.db.ValidateRegisterInfo(req.Login, req.Password); err != nil {
 		httpErr, ok := err.(*errors_api.APIHandlerError)
 		if ok {
-			w.WriteHeader(httpErr.Code())
-		} else {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
-		return
-	}
-	fmt.Printf("!!! register info %s  %s ", req.Login, req.Password)
-	err = ah.db.AddUser(req.Login, req.Password)
-	if err != nil {
-		httpErr, ok := err.(*errors_api.APIHandlerError)
-		if ok {
+			ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", err)
 			w.WriteHeader(httpErr.Code())
 		} else {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -102,6 +92,18 @@ func (ah *APIHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err = ah.db.AddUser(req.Login, req.Password)
+	if err != nil {
+		httpErr, ok := err.(*errors_api.APIHandlerError)
+		if ok {
+			ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", err)
+			w.WriteHeader(httpErr.Code())
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		return
+	}
+	ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", "register success %s", req.Login)
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -145,5 +147,7 @@ func (ah *APIHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 	http.SetCookie(w, &cookie)
 	//fmt.Println(userID)
+	ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description token-", token)
+
 	w.WriteHeader(http.StatusOK)
 }
