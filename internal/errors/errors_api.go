@@ -1,4 +1,4 @@
-package errorsApi
+package errorsapi
 
 import "fmt"
 
