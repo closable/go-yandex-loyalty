@@ -4,11 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
-	errors_api "github.com/closable/go-yandex-loyalty/errors"
+	errors_api "github.com/closable/go-yandex-loyalty/internal/errors"
 	"github.com/closable/go-yandex-loyalty/models"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
@@ -67,7 +68,7 @@ func (s *Store) ValidateRegisterInfo(login, pass string) error {
 }
 
 func (s *Store) AddUser(login, pass string) error {
-	sql := "insert into ya.users (user_name, user_passw, status) values ($1, md5($2), true)"
+	sql := "insert into ya.users (user_name, user_passw, status) values ($1, sha256($2)::text, true)"
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
@@ -98,7 +99,7 @@ func (s *Store) Login(login, pass string) (int, error) {
 	sql := `
 	select user_id  
 		from ya.users u 
-	where u.user_name = $1 and u.user_passw = md5($2) and status`
+	where u.user_name = $1 and u.user_passw = sha256($2)::text and status`
 
 	// invaid registerinformation
 	if len(login) == 0 || len(pass) == 0 {
@@ -326,4 +327,68 @@ func (s *Store) GetWithdrawals(userID int) ([]models.WithdrawGetDB, error) {
 
 	}
 	return res, nil
+}
+
+func (s *Store) PrepareDB() error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+	pipe := make([]string, 4)
+	pipe[0] = `CREATE SCHEMA IF NOT EXISTS ya AUTHORIZATION postgres`
+	pipe[1] = `CREATE TABLE IF NOT EXISTS ya.users
+				(
+					user_id bigserial NOT NULL,
+					user_name character varying(255) COLLATE pg_catalog."default" NOT NULL,
+					user_passw character varying(100) COLLATE pg_catalog."default" NOT NULL,
+					status boolean DEFAULT false,
+					CONSTRAINT user_pkey PRIMARY KEY (user_id)
+				)`
+	// pipe[2] = `CREATE SEQUENCE IF NOT EXISTS ya.user_user_id_seq
+	// 				INCREMENT 1
+	// 				START 1
+	// 				MINVALUE 1
+	// 				MAXVALUE 9223372036854775807
+	// 				CACHE 1
+	// 				OWNED BY ya.users.user_id`
+	pipe[2] = `CREATE TABLE IF NOT EXISTS ya.orders
+				(
+					id_order bigserial NOT NULL,
+					user_id integer NOT NULL,
+					order_number character varying(20) COLLATE pg_catalog."default" NOT NULL,
+					status character varying(20) COLLATE pg_catalog."default" NOT NULL,
+					accrual numeric(10,2) DEFAULT 0.0,
+					uploaded_at timestamp with time zone,
+					CONSTRAINT orders_pkey PRIMARY KEY (id_order)
+				)`
+	// pipe[4] = `CREATE SEQUENCE IF NOT EXISTS ya.orders_id_order_seq
+	// 				INCREMENT 1
+	// 				START 1
+	// 				MINVALUE 1
+	// 				MAXVALUE 9223372036854775807
+	// 				CACHE 1
+	// 				OWNED BY ya.orders.id_order`
+	pipe[3] = `CREATE TABLE IF NOT EXISTS ya.withdrawals
+				(
+					id_withdraw bigserial NOT NULL,
+					order_number character varying(20) COLLATE pg_catalog."default" NOT NULL,
+					sum numeric(10,2) DEFAULT 0.0,
+					processed_at time with time zone,
+					CONSTRAINT withdrawals_pkey PRIMARY KEY (id_withdraw)
+				)`
+	// pipe[6] = `CREATE SEQUENCE IF NOT EXISTS ya.withdrawals_id_withdraw_seq
+	// 				INCREMENT 1
+	// 				START 1
+	// 				MINVALUE 1
+	// 				MAXVALUE 9223372036854775807
+	// 				CACHE 1
+	// 				OWNED BY ya.withdrawals.id_withdraw`
+
+	for ind, sql := range pipe {
+		_, err := s.DB.ExecContext(ctx, sql)
+		if err != nil {
+			fmt.Println(ind, sql, err)
+			return err
+		}
+	}
+
+	return nil
 }

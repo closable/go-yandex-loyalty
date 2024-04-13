@@ -12,9 +12,13 @@ import (
 )
 
 func TestApiHandler_Register(t *testing.T) {
-	DSN := "postgres://postgres:1303@localhost:5432"
-	src, _ := db.NewDB(DSN)
-	ah := New(src)
+	if len(dsn) == 0 {
+		initDSN()
+	}
+	src, _ := db.NewDB(dsn)
+	logger := NewLogger()
+	sugar := *logger.Sugar()
+	ah := New(src, sugar)
 	type wants struct {
 		body       string
 		statusCode int
@@ -69,9 +73,13 @@ func TestApiHandler_Register(t *testing.T) {
 }
 
 func TestApiHandler_Login(t *testing.T) {
-	DSN := "postgres://postgres:1303@localhost:5432"
-	src, _ := db.NewDB(DSN)
-	ah := New(src)
+	if len(dsn) == 0 {
+		initDSN()
+	}
+	src, _ := db.NewDB(dsn)
+	logger := NewLogger()
+	sugar := *logger.Sugar()
+	ah := New(src, sugar)
 	type wants struct {
 		body       string
 		statusCode int

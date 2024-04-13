@@ -1,10 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 
+	"github.com/closable/go-yandex-loyalty/internal/config"
 	"github.com/closable/go-yandex-loyalty/internal/db"
 	"github.com/closable/go-yandex-loyalty/internal/handlers"
 )
@@ -16,19 +16,22 @@ func main() {
 }
 
 func run() error {
-	ServerAddress := "localhost:8080"
-	DSN := "postgres://postgres:1303@localhost:5432"
+	cfg := config.LoadConfig()
+	logger := handlers.NewLogger()
+	sugar := *logger.Sugar()
+
 	//var src handlers.Sourcer
 	var err error
 
-	src, err := db.NewDB(DSN) // cfg.DSN)
+	src, err := db.NewDB(cfg.DSN) // cfg.DSN)
 	if err != nil {
 		os.Exit(1)
 	}
 
-	handler := handlers.New(src)
-	fmt.Printf("Store DBMS setup successfuly -> %s\n", DSN)
-	fmt.Printf("Running server on -> %s\n", ServerAddress)
+	handler := handlers.New(src, sugar)
 
-	return http.ListenAndServe(ServerAddress, handler.InitRouter())
+	sugar.Infoln("Store DBMS setup successfuly -> %s", cfg.DSN)
+	sugar.Infoln("Running server on -> %s", cfg.ServerAddress)
+
+	return http.ListenAndServe(cfg.ServerAddress, handler.InitRouter())
 }

@@ -7,9 +7,10 @@ import (
 	"net/http"
 	"time"
 
-	errors_api "github.com/closable/go-yandex-loyalty/errors"
+	errors_api "github.com/closable/go-yandex-loyalty/internal/errors"
 	"github.com/closable/go-yandex-loyalty/internal/utils"
 	"github.com/closable/go-yandex-loyalty/models"
+	"go.uber.org/zap"
 )
 
 type Sourcer interface {
@@ -21,11 +22,13 @@ type Sourcer interface {
 	AddOrder(userID int, orderNumber string) error
 	AddWithdraw(userID int, orderNumber string, sum float64) error
 	GetWithdrawals(userID int) ([]models.WithdrawGetDB, error)
+	PrepareDB() error
 }
 
 type (
 	ApiHandler struct {
-		db Sourcer
+		db    Sourcer
+		sugar zap.SugaredLogger
 	}
 	RegisterRequest struct {
 		Login    string `json:"login"`
@@ -48,11 +51,16 @@ type (
 	}
 )
 
-func New(src Sourcer) *ApiHandler {
+func New(src Sourcer, sugar zap.SugaredLogger) *ApiHandler {
 	// prepare db
+	err := src.PrepareDB()
+	if err != nil {
+		sugar.DPanicln("can't create DB set")
+	}
 
 	return &ApiHandler{
-		db: src,
+		db:    src,
+		sugar: sugar,
 	}
 }
 
@@ -102,14 +110,14 @@ func (ah *ApiHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil || len(body) == 0 {
-		fmt.Println(" ??? Err body", err)
+		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", "err body")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	req := &RegisterRequest{}
 	if err = json.Unmarshal(body, req); err != nil {
-		fmt.Println("Err body")
+		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", "err body")
 		w.WriteHeader(http.StatusInternalServerError) // think about
 		return
 	}
