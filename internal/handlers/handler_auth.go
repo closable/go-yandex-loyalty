@@ -98,6 +98,25 @@ func (ah *APIHandler) AddOrder(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
 
 	userID, _ := strconv.Atoi(r.FormValue("userID"))
+
+	// check cookies I'm totaly disagree becaues headers set into middleware
+	if userID == 0 {
+		token, _ := r.Cookie("Authorization")
+		headerAuth := r.Header.Get("Authorization")
+
+		if len(token.String()) > 0 {
+			userID = utils.GetUserID(token.Value)
+			w.Header().Add("Authorization", token.Value)
+			//fmt.Printf("user get from existing cookies %d\n", userID)
+		}
+
+		if len(headerAuth) > 0 && userID == 0 {
+			userID = utils.GetUserID(headerAuth)
+			w.Header().Add("Authorization", headerAuth)
+			//fmt.Printf("user get from existing header %d\n", userID)
+		}
+	}
+
 	if userID == 0 {
 		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", "user unauthorized")
 		w.WriteHeader(http.StatusUnauthorized)
