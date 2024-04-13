@@ -8,7 +8,7 @@ import (
 	"github.com/closable/go-yandex-loyalty/internal/utils"
 )
 
-func (ah *ApiHandler) Authenticator(h http.Handler) http.Handler {
+func (ah *APIHandler) Authenticator(h http.Handler) http.Handler {
 	auth := func(w http.ResponseWriter, r *http.Request) {
 
 		w.Header().Set("Content-Type", "application/json")

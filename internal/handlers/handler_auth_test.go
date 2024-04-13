@@ -30,7 +30,7 @@ func initDSN() {
 	dsn = config.LoadConfig().DSN
 }
 
-func TestApiHandler_AddOrder(t *testing.T) {
+func TestAPIHandler_AddOrder(t *testing.T) {
 	if len(dsn) == 0 {
 		initDSN()
 	}
@@ -188,7 +188,7 @@ func TestApiHandler_AddOrder(t *testing.T) {
 	}
 }
 
-func TestApiHandler_Orders(t *testing.T) {
+func TestAPIHandler_Orders(t *testing.T) {
 	if len(dsn) == 0 {
 		initDSN()
 	}
@@ -365,7 +365,7 @@ func TestApiHandler_Orders(t *testing.T) {
 	}
 }
 
-func TestApiHandler_Balance(t *testing.T) {
+func TestAPIHandler_Balance(t *testing.T) {
 	if len(dsn) == 0 {
 		initDSN()
 	}
@@ -543,7 +543,7 @@ func TestApiHandler_Balance(t *testing.T) {
 	}
 }
 
-// func errTestApiHandler_Withdrawals(t *testing.T) {
+// func errTestAPIHandler_Withdrawals(t *testing.T) {
 // 	if len(dsn) == 0 {
 // 		initDSN()
 // 	}

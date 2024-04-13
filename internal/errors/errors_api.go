@@ -2,22 +2,22 @@ package errors_api
 
 import "fmt"
 
-type ApiHandlerError struct {
+type APIHandlerError struct {
 	Err     error
 	Message string
 	Status  int
 }
 
-func (he *ApiHandlerError) Error() string {
+func (he *APIHandlerError) Error() string {
 	return fmt.Sprintf("%v %v", he.Err, he.Message)
 }
 
-func (he *ApiHandlerError) Code() int {
+func (he *APIHandlerError) Code() int {
 	return he.Status
 }
 
-func NewApiError(err error, msg string, status int) error {
-	return &ApiHandlerError{
+func NewAPIError(err error, msg string, status int) error {
+	return &APIHandlerError{
 		Err:     err,
 		Message: msg,
 		Status:  status,

@@ -11,7 +11,7 @@ import (
 	"github.com/closable/go-yandex-loyalty/internal/db"
 )
 
-func TestApiHandler_Register(t *testing.T) {
+func TestAPIHandler_Register(t *testing.T) {
 	if len(dsn) == 0 {
 		initDSN()
 	}
@@ -72,7 +72,7 @@ func TestApiHandler_Register(t *testing.T) {
 	}
 }
 
-func TestApiHandler_Login(t *testing.T) {
+func TestAPIHandler_Login(t *testing.T) {
 	if len(dsn) == 0 {
 		initDSN()
 	}

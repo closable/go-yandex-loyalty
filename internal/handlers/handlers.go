@@ -26,7 +26,7 @@ type Sourcer interface {
 }
 
 type (
-	ApiHandler struct {
+	APIHandler struct {
 		db    Sourcer
 		sugar zap.SugaredLogger
 	}
@@ -51,20 +51,20 @@ type (
 	}
 )
 
-func New(src Sourcer, sugar zap.SugaredLogger) *ApiHandler {
+func New(src Sourcer, sugar zap.SugaredLogger) *APIHandler {
 	// prepare db
 	err := src.PrepareDB()
 	if err != nil {
 		sugar.DPanicln("can't create DB set")
 	}
 
-	return &ApiHandler{
+	return &APIHandler{
 		db:    src,
 		sugar: sugar,
 	}
 }
 
-func (ah *ApiHandler) Register(w http.ResponseWriter, r *http.Request) {
+func (ah *APIHandler) Register(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	body, err := io.ReadAll(r.Body)
@@ -82,7 +82,7 @@ func (ah *ApiHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := ah.db.ValidateRegisterInfo(req.Login, req.Password); err != nil {
-		httpErr, ok := err.(*errors_api.ApiHandlerError)
+		httpErr, ok := err.(*errors_api.APIHandlerError)
 		if ok {
 			w.WriteHeader(httpErr.Code())
 		} else {
@@ -93,7 +93,7 @@ func (ah *ApiHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 	err = ah.db.AddUser(req.Login, req.Password)
 	if err != nil {
-		httpErr, ok := err.(*errors_api.ApiHandlerError)
+		httpErr, ok := err.(*errors_api.APIHandlerError)
 		if ok {
 			w.WriteHeader(httpErr.Code())
 		} else {
@@ -105,7 +105,7 @@ func (ah *ApiHandler) Register(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (ah *ApiHandler) Login(w http.ResponseWriter, r *http.Request) {
+func (ah *APIHandler) Login(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	body, err := io.ReadAll(r.Body)
@@ -124,7 +124,7 @@ func (ah *ApiHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	userID, err := ah.db.Login(req.Login, req.Password)
 	if err != nil {
-		httpErr, ok := err.(*errors_api.ApiHandlerError)
+		httpErr, ok := err.(*errors_api.APIHandlerError)
 		if ok {
 			w.WriteHeader(httpErr.Code())
 		}

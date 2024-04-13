@@ -4,7 +4,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func (ah *ApiHandler) InitRouter() chi.Router {
+func (ah *APIHandler) InitRouter() chi.Router {
 	router := chi.NewRouter()
 
 	router.Post("/api/user/register", ah.Register)

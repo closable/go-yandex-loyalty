@@ -11,7 +11,7 @@ import (
 	"github.com/closable/go-yandex-loyalty/internal/utils"
 )
 
-func (ah *ApiHandler) Orders(w http.ResponseWriter, r *http.Request) {
+func (ah *APIHandler) Orders(w http.ResponseWriter, r *http.Request) {
 
 	//userID := 6
 	userID, _ := strconv.Atoi(r.FormValue("userID"))
@@ -23,7 +23,7 @@ func (ah *ApiHandler) Orders(w http.ResponseWriter, r *http.Request) {
 
 	orders, err := ah.db.GetOrders(userID)
 	if err != nil {
-		httpErr, ok := err.(*errors_api.ApiHandlerError)
+		httpErr, ok := err.(*errors_api.APIHandlerError)
 		if ok {
 			ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", err)
 			w.WriteHeader(httpErr.Code())
@@ -64,7 +64,7 @@ func makeOrderItem(ordNumb, status string, accrual float64, uploadAt string) Ord
 	return *res
 }
 
-func (ah *ApiHandler) Balance(w http.ResponseWriter, r *http.Request) {
+func (ah *APIHandler) Balance(w http.ResponseWriter, r *http.Request) {
 	userID, _ := strconv.Atoi(r.FormValue("userID"))
 	if userID == 0 {
 		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", "user unauthorized")
@@ -75,7 +75,7 @@ func (ah *ApiHandler) Balance(w http.ResponseWriter, r *http.Request) {
 	withdraw, err := ah.db.Balance(userID)
 	if err != nil {
 		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", err)
-		httpErr, ok := err.(*errors_api.ApiHandlerError)
+		httpErr, ok := err.(*errors_api.APIHandlerError)
 		if ok {
 			w.WriteHeader(httpErr.Code())
 		}
@@ -94,7 +94,7 @@ func (ah *ApiHandler) Balance(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(resp))
 }
 
-func (ah *ApiHandler) AddOrder(w http.ResponseWriter, r *http.Request) {
+func (ah *APIHandler) AddOrder(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
 
 	userID, _ := strconv.Atoi(r.FormValue("userID"))
@@ -119,7 +119,7 @@ func (ah *ApiHandler) AddOrder(w http.ResponseWriter, r *http.Request) {
 
 	err = ah.db.AddOrder(userID, orderNumber)
 	if err != nil {
-		httpErr, ok := err.(*errors_api.ApiHandlerError)
+		httpErr, ok := err.(*errors_api.APIHandlerError)
 		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", err)
 		if ok {
 			w.WriteHeader(httpErr.Code())
@@ -130,7 +130,7 @@ func (ah *ApiHandler) AddOrder(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (ah *ApiHandler) GetWithdraw(w http.ResponseWriter, r *http.Request) {
+func (ah *APIHandler) GetWithdraw(w http.ResponseWriter, r *http.Request) {
 	userID, _ := strconv.Atoi(r.FormValue("userID"))
 	if userID == 0 {
 		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", "user unauthorized")
@@ -160,7 +160,7 @@ func (ah *ApiHandler) GetWithdraw(w http.ResponseWriter, r *http.Request) {
 
 	withdraw, err := ah.db.Balance(userID)
 	if err != nil {
-		httpErr, ok := err.(*errors_api.ApiHandlerError)
+		httpErr, ok := err.(*errors_api.APIHandlerError)
 		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", err)
 		if ok {
 			w.WriteHeader(httpErr.Code())
@@ -178,7 +178,7 @@ func (ah *ApiHandler) GetWithdraw(w http.ResponseWriter, r *http.Request) {
 	err = ah.db.AddWithdraw(userID, req.Order, req.Sum)
 	if err != nil {
 		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", err)
-		httpErr, ok := err.(*errors_api.ApiHandlerError)
+		httpErr, ok := err.(*errors_api.APIHandlerError)
 		if ok {
 			w.WriteHeader(httpErr.Code())
 		}
@@ -188,7 +188,7 @@ func (ah *ApiHandler) GetWithdraw(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (ah *ApiHandler) Withdrawals(w http.ResponseWriter, r *http.Request) {
+func (ah *APIHandler) Withdrawals(w http.ResponseWriter, r *http.Request) {
 	userID, _ := strconv.Atoi(r.FormValue("userID"))
 	if userID == 0 {
 		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", "user unauthorized")
@@ -199,7 +199,7 @@ func (ah *ApiHandler) Withdrawals(w http.ResponseWriter, r *http.Request) {
 	orders, err := ah.db.GetWithdrawals(userID)
 	if err != nil {
 		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", err)
-		httpErr, ok := err.(*errors_api.ApiHandlerError)
+		httpErr, ok := err.(*errors_api.APIHandlerError)
 		if ok {
 			w.WriteHeader(httpErr.Code())
 		}
