@@ -26,9 +26,8 @@ func ParseConfigEnv() {
 func ParseFlags() {
 	flag.StringVar(&FlagRunAddr, "a", "localhost:8090", "address and port to run server")
 	flag.StringVar(&FlagAccrualAddr, "r", "localhost:8080", "accrual system address and port")
-	flag.StringVar(&FlagDSN, "d", "postgres://postgres:1303@localhost:5432/postgres", "access to DBMS")
-	//flag.StringVar(&FlagDSN, "d", "", "access to DBMS")
-
+	//flag.StringVar(&FlagDSN, "d", "postgres://postgres:1303@localhost:5432/postgres", "access to DBMS")
+	flag.StringVar(&FlagDSN, "d", "", "access to DBMS")
 	flag.Parse()
 }
 
