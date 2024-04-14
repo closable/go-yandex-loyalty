@@ -25,10 +25,16 @@ func run() error {
 
 	src, err := db.NewDB(cfg.DSN) // cfg.DSN)
 	if err != nil {
+		sugar.Infoln(err)
 		os.Exit(1)
 	}
 
-	handler := handlers.New(src, sugar)
+	handler, err := handlers.New(src, sugar)
+	if err != nil {
+		sugar.Infoln(err)
+		src.DB.Close()
+		os.Exit(1)
+	}
 
 	sugar.Infoln("Store DBMS setup successfuly -> %s", cfg.DSN)
 	sugar.Infoln("Running server on -> %s", cfg.ServerAddress)

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -51,17 +52,21 @@ type (
 	}
 )
 
-func New(src Sourcer, sugar zap.SugaredLogger) *APIHandler {
+func New(src Sourcer, sugar zap.SugaredLogger) (*APIHandler, error) {
 	// prepare db
 	err := src.PrepareDB()
 	if err != nil {
-		sugar.DPanicln("can't create DB set")
+		sugar.Infoln("can't create DB set")
+		return &APIHandler{
+			db:    src,
+			sugar: sugar,
+		}, errors.New("SQL Server problem")
 	}
 
 	return &APIHandler{
 		db:    src,
 		sugar: sugar,
-	}
+	}, nil
 }
 
 func (ah *APIHandler) Register(w http.ResponseWriter, r *http.Request) {

@@ -166,7 +166,7 @@ func (s *Store) Balance(userID int) (models.WithdrawDB, error) {
 	select coalesce(sum(o.accrual), 0) accrual, coalesce(sum(w.sum),0) withdraw
 		from ya.orders o
 		inner join ya.withdrawals w on w.order_number = o.order_number
-	where o.user_id=$1 and o.status = 'PROCESSED'`
+	where o.user_id=$1 /*and o.status = 'PROCESSED'*/`
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
@@ -342,13 +342,6 @@ func (s *Store) PrepareDB() error {
 					status boolean DEFAULT false,
 					CONSTRAINT user_pkey PRIMARY KEY (user_id)
 				)`
-	// pipe[2] = `CREATE SEQUENCE IF NOT EXISTS ya.user_user_id_seq
-	// 				INCREMENT 1
-	// 				START 1
-	// 				MINVALUE 1
-	// 				MAXVALUE 9223372036854775807
-	// 				CACHE 1
-	// 				OWNED BY ya.users.user_id`
 	pipe[2] = `CREATE TABLE IF NOT EXISTS ya.orders
 				(
 					id_order bigserial NOT NULL,
@@ -359,13 +352,6 @@ func (s *Store) PrepareDB() error {
 					uploaded_at timestamp with time zone,
 					CONSTRAINT orders_pkey PRIMARY KEY (id_order)
 				)`
-	// pipe[4] = `CREATE SEQUENCE IF NOT EXISTS ya.orders_id_order_seq
-	// 				INCREMENT 1
-	// 				START 1
-	// 				MINVALUE 1
-	// 				MAXVALUE 9223372036854775807
-	// 				CACHE 1
-	// 				OWNED BY ya.orders.id_order`
 	pipe[3] = `CREATE TABLE IF NOT EXISTS ya.withdrawals
 				(
 					id_withdraw bigserial NOT NULL,
@@ -374,13 +360,6 @@ func (s *Store) PrepareDB() error {
 					processed_at time with time zone,
 					CONSTRAINT withdrawals_pkey PRIMARY KEY (id_withdraw)
 				)`
-	// pipe[6] = `CREATE SEQUENCE IF NOT EXISTS ya.withdrawals_id_withdraw_seq
-	// 				INCREMENT 1
-	// 				START 1
-	// 				MINVALUE 1
-	// 				MAXVALUE 9223372036854775807
-	// 				CACHE 1
-	// 				OWNED BY ya.withdrawals.id_withdraw`
 
 	for ind, sql := range pipe {
 		_, err := s.DB.ExecContext(ctx, sql)

@@ -52,6 +52,7 @@ func (ah *APIHandler) Orders(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(orders) == 0 {
+		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("totals of orders - %d", len(orders)))
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
@@ -69,7 +70,7 @@ func (ah *APIHandler) Orders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("tatals orders - %d", len(body)))
+	ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("totals of orders - %d", len(body)))
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(resp))
 }
@@ -212,11 +213,11 @@ func (ah *APIHandler) GetWithdraw(w http.ResponseWriter, r *http.Request) {
 	// fmt.Println(withdraw.Current, withdraw.Withdrawn, req.Sum)
 
 	// check balance
-	if withdraw.Current-withdraw.Withdrawn < req.Sum {
-		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("balance %f/ withdraw %f", withdraw.Current-withdraw.Withdrawn, req.Sum))
-		w.WriteHeader(http.StatusPaymentRequired)
-		return
-	}
+	// if withdraw.Current-withdraw.Withdrawn < req.Sum {
+	// 	ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("balance %f/ withdraw %f", withdraw.Current-withdraw.Withdrawn, req.Sum))
+	// 	w.WriteHeader(http.StatusPaymentRequired)
+	// 	return
+	// }
 
 	err = ah.db.AddWithdraw(userID, req.Order, req.Sum)
 	if err != nil {

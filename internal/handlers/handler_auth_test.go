@@ -37,7 +37,7 @@ func TestAPIHandler_AddOrder(t *testing.T) {
 	src, _ := db.NewDB(dsn)
 	logger := NewLogger()
 	sugar := *logger.Sugar()
-	ah := New(src, sugar)
+	ah, _ := New(src, sugar)
 	type wants struct {
 		body       string
 		statusCode int
@@ -195,7 +195,7 @@ func TestAPIHandler_Orders(t *testing.T) {
 	src, _ := db.NewDB(dsn)
 	logger := NewLogger()
 	sugar := *logger.Sugar()
-	ah := New(src, sugar)
+	ah, _ := New(src, sugar)
 	type wants struct {
 		body       string
 		statusCode int
@@ -372,7 +372,7 @@ func TestAPIHandler_Balance(t *testing.T) {
 	src, _ := db.NewDB(dsn)
 	logger := NewLogger()
 	sugar := *logger.Sugar()
-	ah := New(src, sugar)
+	ah, _ := New(src, sugar)
 	type wants struct {
 		body       string
 		statusCode int
