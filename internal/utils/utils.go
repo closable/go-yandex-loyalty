@@ -54,14 +54,17 @@ func GetUserID(tokenString string) int {
 func CheckOrderByLuna(orderNum string) bool {
 	sum := 0
 	//var digits = make([]int, len(orderNum))
-	for i := 0; i < len(orderNum); i++ {
+	//for i := 0; i < len(orderNum); i++ {
+	pos := 0
+	for i := len(orderNum) - 1; i >= 0; i-- {
 		digit, _ := strconv.Atoi(string(orderNum[i]))
-		if i%2 != 0 {
+		if pos%2 != 0 {
 			digit *= 2
 			if digit > 9 {
 				digit -= 9
 			}
 		}
+		pos++
 		// digits[i] = digit
 		sum += digit
 	}

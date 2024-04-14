@@ -12,7 +12,7 @@ import (
 )
 
 func (ah *APIHandler) Orders(w http.ResponseWriter, r *http.Request) {
-
+	w.Header().Set("Content-Type", "application/json")
 	//userID := 6
 	userID, _ := strconv.Atoi(r.FormValue("userID"))
 
@@ -85,6 +85,7 @@ func makeOrderItem(ordNumb, status string, accrual float64, uploadAt string) Ord
 }
 
 func (ah *APIHandler) Balance(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	userID, _ := strconv.Atoi(r.FormValue("userID"))
 	if userID == 0 {
 		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", "user unauthorized")
@@ -151,7 +152,7 @@ func (ah *APIHandler) AddOrder(w http.ResponseWriter, r *http.Request) {
 	}
 	orderNumber := string(body)
 	if ok := utils.CheckOrderByLuna(orderNumber); !ok {
-		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", "error order number")
+		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("error order number %s", orderNumber))
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		return
 	}
@@ -170,6 +171,7 @@ func (ah *APIHandler) AddOrder(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ah *APIHandler) GetWithdraw(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	userID, _ := strconv.Atoi(r.FormValue("userID"))
 	if userID == 0 {
 		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", "user unauthorized")
@@ -211,16 +213,16 @@ func (ah *APIHandler) GetWithdraw(w http.ResponseWriter, r *http.Request) {
 
 	// check balance
 	if withdraw.Current-withdraw.Withdrawn < req.Sum {
+		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("balance %f/ withdraw %f", withdraw.Current-withdraw.Withdrawn, req.Sum))
 		w.WriteHeader(http.StatusPaymentRequired)
+		return
 	}
 
 	err = ah.db.AddWithdraw(userID, req.Order, req.Sum)
 	if err != nil {
 		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", err)
-		httpErr, ok := err.(*errors_api.APIHandlerError)
-		if ok {
-			w.WriteHeader(httpErr.Code())
-		}
+		httpErr, _ := err.(*errors_api.APIHandlerError)
+		w.WriteHeader(httpErr.Code())
 		return
 	}
 	ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("withdrawn - %f", withdraw.Withdrawn))
@@ -228,6 +230,7 @@ func (ah *APIHandler) GetWithdraw(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ah *APIHandler) Withdrawals(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	userID, _ := strconv.Atoi(r.FormValue("userID"))
 	if userID == 0 {
 		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", "user unauthorized")
