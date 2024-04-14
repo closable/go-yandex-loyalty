@@ -103,8 +103,38 @@ func (ah *APIHandler) Register(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", "register success %s", req.Login)
+
+	userID, status := LoginAction(w, ah, req.Login, req.Password)
+	if status != 0 {
+		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("login error status %d", status))
+		w.WriteHeader(status)
+		return
+	}
+
+	ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("register success %s userID %d", req.Login, userID))
 	w.WriteHeader(http.StatusOK)
+}
+
+func LoginAction(w http.ResponseWriter, ah *APIHandler, login, pass string) (int, int) {
+	userID, err := ah.db.Login(login, pass)
+	if err != nil {
+		httpErr, _ := err.(*errors_api.APIHandlerError)
+		return 0, httpErr.Code()
+	}
+
+	token, err := utils.BuildJWTString(userID)
+	if err != nil {
+		return 0, http.StatusInternalServerError
+	}
+
+	w.Header().Add("Authorization", token)
+	cookie := http.Cookie{
+		Name:    "Authorization",
+		Expires: time.Now().Add(utils.TokenEXP),
+		Value:   token,
+	}
+	http.SetCookie(w, &cookie)
+	return userID, 0
 }
 
 func (ah *APIHandler) Login(w http.ResponseWriter, r *http.Request) {
@@ -123,31 +153,37 @@ func (ah *APIHandler) Login(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError) // think about
 		return
 	}
-
-	userID, err := ah.db.Login(req.Login, req.Password)
-	if err != nil {
-		httpErr, ok := err.(*errors_api.APIHandlerError)
-		if ok {
-			w.WriteHeader(httpErr.Code())
-		}
+	userID, status := LoginAction(w, ah, req.Login, req.Password)
+	if status != 0 {
+		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("login error status %d", status))
+		w.WriteHeader(status)
 		return
 	}
+	// userID, err := ah.db.Login(req.Login, req.Password)
+	// if err != nil {
+	// 	httpErr, ok := err.(*errors_api.APIHandlerError)
+	// 	if ok {
+	// 		w.WriteHeader(httpErr.Code())
+	// 	}
+	// 	return
+	// }
 
-	token, err := utils.BuildJWTString(userID)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
+	// token, err := utils.BuildJWTString(userID)
+	// if err != nil {
+	// 	w.WriteHeader(http.StatusInternalServerError)
+	// 	return
+	// }
 
-	w.Header().Add("Authorization", token)
-	cookie := http.Cookie{
-		Name:    "Authorization",
-		Expires: time.Now().Add(utils.TokenEXP),
-		Value:   token,
-	}
-	http.SetCookie(w, &cookie)
+	// w.Header().Add("Authorization", token)
+	// cookie := http.Cookie{
+	// 	Name:    "Authorization",
+	// 	Expires: time.Now().Add(utils.TokenEXP),
+	// 	Value:   token,
+	// }
+	// http.SetCookie(w, &cookie)
+
 	//fmt.Println(userID)
-	ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description token-", token)
+	ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description userID", userID)
 
 	w.WriteHeader(http.StatusOK)
 }
