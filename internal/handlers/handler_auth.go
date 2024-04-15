@@ -155,16 +155,16 @@ func (ah *APIHandler) AddOrder(w http.ResponseWriter, r *http.Request) {
 	}
 
 	orderNumber := string(body)
+	if ok := utils.CheckOrderByLuna(orderNumber); !ok {
+		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("error order number %s", orderNumber))
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		return
+	}
+
 	acc, accStatus := AccrualActions(orderNumber, &ah.sugar, ah.accAddress)
 	if accStatus > 202 {
 		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("the accrual system has wrong status %d", accStatus))
 		w.WriteHeader(accStatus)
-		return
-	}
-
-	if ok := utils.CheckOrderByLuna(orderNumber); !ok {
-		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("error order number %s", orderNumber))
-		w.WriteHeader(http.StatusUnprocessableEntity)
 		return
 	}
 
@@ -327,40 +327,5 @@ func AccrualActions(orderNumber string, sugar *zap.SugaredLogger, accAddress str
 	}
 
 	return accrual, accResp.StatusCode
-
-	// var goodsBody = []byte(`
-	// {
-	// 	"match": "Milka",
-	// 	"reward": 42,
-	// 	"reward_type": "pt"
-	// }
-	// `)
-	// request, err := http.NewRequest(http.MethodPost, "http://127.0.0.1:8080/api/goods", bytes.NewBuffer(goodsBody))
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
-	// request.Header.Set("Content-Type", "application/json")
-	// resp, _ := client.Do(request)
-	// fmt.Println("GOOOODS", resp.StatusCode)
-
-	// accBody := []byte(fmt.Sprintf(`
-	// {
-	// 	"order": "%s",
-	// 	"goods": [
-	// 		{
-	// 			"description": "Milka",
-	// 			"price": 700
-	// 		}
-	// 	]
-	// }
-	// `, orderNumber))
-
-	// request, err = http.NewRequest(http.MethodPost, "http://127.0.0.1:8080/api/orders", bytes.NewBuffer(accBody))
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
-	// request.Header.Set("Content-Type", "application/json")
-	// resp, _ = client.Do(request)
-	// fmt.Println("ORDERS & GOOOODS", resp.StatusCode)
 
 }

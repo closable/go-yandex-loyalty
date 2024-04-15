@@ -36,9 +36,9 @@ func run() error {
 		os.Exit(1)
 	}
 
-	sugar.Infoln("Setup DBMS successfuly -> %s", cfg.DSN)
-	sugar.Infoln("Accrual system address -> %s", cfg.AccrualAddress)
-	sugar.Infoln("Running server on -> %s", cfg.ServerAddress)
+	sugar.Infoln("Setup DBMS successfuly ->", cfg.DSN)
+	sugar.Infoln("Accrual system address ->", cfg.AccrualAddress)
+	sugar.Infoln("Running server on ->", cfg.ServerAddress)
 
 	return http.ListenAndServe(cfg.ServerAddress, handler.InitRouter())
 }
