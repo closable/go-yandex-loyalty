@@ -297,7 +297,7 @@ func AccrualActions(orderNumber string, sugar *zap.SugaredLogger, accAddress str
 	client := &http.Client{}
 	// check order into accrual
 	accrual := &models.AccrualGet{}
-
+	fmt.Println("accAddress", accAddress, fmt.Sprintf("%s/api/orders/%s", accAddress, orderNumber))
 	accOrder, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/orders/%s", accAddress, orderNumber), nil)
 	if err != nil {
 		sugar.Infoln("accrual actions: getting order info into the system", err)
@@ -319,6 +319,7 @@ func AccrualActions(orderNumber string, sugar *zap.SugaredLogger, accAddress str
 		sugar.Infoln("accrual actions: read body", err)
 		return accrual, http.StatusInternalServerError
 	}
+	defer accResp.Body.Close()
 
 	if err = json.Unmarshal(body, accrual); err != nil {
 		sugar.Infoln("accrual actions: unpack body to json", err)
