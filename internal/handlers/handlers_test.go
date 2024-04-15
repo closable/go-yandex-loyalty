@@ -18,7 +18,7 @@ func TestAPIHandler_Register(t *testing.T) {
 	src, _ := db.NewDB(dsn)
 	logger := NewLogger()
 	sugar := *logger.Sugar()
-	ah, _ := New(src, sugar)
+	ah, _ := New(src, sugar, acc)
 	type wants struct {
 		body       string
 		statusCode int
@@ -79,7 +79,7 @@ func TestAPIHandler_Login(t *testing.T) {
 	src, _ := db.NewDB(dsn)
 	logger := NewLogger()
 	sugar := *logger.Sugar()
-	ah, _ := New(src, sugar)
+	ah, _ := New(src, sugar, acc)
 	type wants struct {
 		body       string
 		statusCode int

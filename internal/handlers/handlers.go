@@ -20,7 +20,7 @@ type Sourcer interface {
 	Login(login, pass string) (int, error)
 	GetOrders(userID int) ([]models.OrdersDB, error)
 	Balance(userID int) (models.WithdrawDB, error)
-	AddOrder(userID int, orderNumber string) error
+	AddOrder(userID int, orderNumber, accStatus string, accrual float64) error
 	AddWithdraw(userID int, orderNumber string, sum float64) error
 	GetWithdrawals(userID int) ([]models.WithdrawGetDB, error)
 	PrepareDB() error
@@ -28,8 +28,9 @@ type Sourcer interface {
 
 type (
 	APIHandler struct {
-		db    Sourcer
-		sugar zap.SugaredLogger
+		db         Sourcer
+		sugar      zap.SugaredLogger
+		accAddress string
 	}
 	RegisterRequest struct {
 		Login    string `json:"login"`
@@ -52,20 +53,22 @@ type (
 	}
 )
 
-func New(src Sourcer, sugar zap.SugaredLogger) (*APIHandler, error) {
+func New(src Sourcer, sugar zap.SugaredLogger, accAddress string) (*APIHandler, error) {
 	// prepare db
 	err := src.PrepareDB()
 	if err != nil {
 		sugar.Infoln("can't create DB set")
 		return &APIHandler{
-			db:    src,
-			sugar: sugar,
+			db:         src,
+			sugar:      sugar,
+			accAddress: accAddress,
 		}, errors.New("SQL Server problem")
 	}
 
 	return &APIHandler{
-		db:    src,
-		sugar: sugar,
+		db:         src,
+		sugar:      sugar,
+		accAddress: accAddress,
 	}, nil
 }
 

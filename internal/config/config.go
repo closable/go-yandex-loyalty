@@ -2,6 +2,8 @@ package config
 
 import (
 	"flag"
+	"fmt"
+	"net/url"
 
 	"github.com/caarlos0/env/v10"
 )
@@ -39,6 +41,11 @@ func LoadConfig() *config {
 	config.ServerAddress = firstValue(&configEnv.ServerAddress, &FlagRunAddr)
 	config.AccrualAddress = firstValue(&config.AccrualAddress, &FlagAccrualAddr)
 	config.DSN = firstValue(&configEnv.DSN, &FlagDSN)
+
+	acc, _ := url.Parse(config.AccrualAddress)
+	if acc.Host == "" {
+		config.AccrualAddress = fmt.Sprintf("http://%s", config.AccrualAddress)
+	}
 
 	return config
 }

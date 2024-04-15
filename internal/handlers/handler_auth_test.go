@@ -22,12 +22,15 @@ type Balance struct {
 }
 
 var dsn string
+var acc string
 
 func initDSN() {
 	if len(dsn) > 0 {
 		return
 	}
-	dsn = config.LoadConfig().DSN
+	cfg := config.LoadConfig()
+	dsn = cfg.DSN
+	acc = cfg.AccrualAddress
 }
 
 func TestAPIHandler_AddOrder(t *testing.T) {
@@ -37,7 +40,7 @@ func TestAPIHandler_AddOrder(t *testing.T) {
 	src, _ := db.NewDB(dsn)
 	logger := NewLogger()
 	sugar := *logger.Sugar()
-	ah, _ := New(src, sugar)
+	ah, _ := New(src, sugar, acc)
 	type wants struct {
 		body       string
 		statusCode int
@@ -195,7 +198,7 @@ func TestAPIHandler_Orders(t *testing.T) {
 	src, _ := db.NewDB(dsn)
 	logger := NewLogger()
 	sugar := *logger.Sugar()
-	ah, _ := New(src, sugar)
+	ah, _ := New(src, sugar, acc)
 	type wants struct {
 		body       string
 		statusCode int
@@ -372,7 +375,7 @@ func TestAPIHandler_Balance(t *testing.T) {
 	src, _ := db.NewDB(dsn)
 	logger := NewLogger()
 	sugar := *logger.Sugar()
-	ah, _ := New(src, sugar)
+	ah, _ := New(src, sugar, acc)
 	type wants struct {
 		body       string
 		statusCode int

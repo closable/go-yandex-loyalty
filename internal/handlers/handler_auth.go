@@ -9,6 +9,8 @@ import (
 
 	errors_api "github.com/closable/go-yandex-loyalty/internal/errors"
 	"github.com/closable/go-yandex-loyalty/internal/utils"
+	"github.com/closable/go-yandex-loyalty/models"
+	"go.uber.org/zap"
 )
 
 func (ah *APIHandler) Orders(w http.ResponseWriter, r *http.Request) {
@@ -151,14 +153,22 @@ func (ah *APIHandler) AddOrder(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+
 	orderNumber := string(body)
+	acc, accStatus := AccrualActions(orderNumber, &ah.sugar, ah.accAddress)
+	if accStatus > 202 {
+		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("the accrual system has wrong status %d", accStatus))
+		w.WriteHeader(accStatus)
+		return
+	}
+
 	if ok := utils.CheckOrderByLuna(orderNumber); !ok {
 		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("error order number %s", orderNumber))
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		return
 	}
 
-	err = ah.db.AddOrder(userID, orderNumber)
+	err = ah.db.AddOrder(userID, orderNumber, acc.Status, acc.Accrual)
 	if err != nil {
 		httpErr, ok := err.(*errors_api.APIHandlerError)
 		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", err)
@@ -169,6 +179,7 @@ func (ah *APIHandler) AddOrder(w http.ResponseWriter, r *http.Request) {
 	}
 	ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("added order %s", orderNumber))
 	w.WriteHeader(http.StatusOK)
+
 }
 
 func (ah *APIHandler) GetWithdraw(w http.ResponseWriter, r *http.Request) {
@@ -213,11 +224,11 @@ func (ah *APIHandler) GetWithdraw(w http.ResponseWriter, r *http.Request) {
 	// fmt.Println(withdraw.Current, withdraw.Withdrawn, req.Sum)
 
 	// check balance
-	// if withdraw.Current-withdraw.Withdrawn < req.Sum {
-	// 	ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("balance %f/ withdraw %f", withdraw.Current-withdraw.Withdrawn, req.Sum))
-	// 	w.WriteHeader(http.StatusPaymentRequired)
-	// 	return
-	// }
+	if withdraw.Current-withdraw.Withdrawn < req.Sum {
+		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("balance %f/ withdraw %f", withdraw.Current-withdraw.Withdrawn, req.Sum))
+		w.WriteHeader(http.StatusPaymentRequired)
+		return
+	}
 
 	err = ah.db.AddWithdraw(userID, req.Order, req.Sum)
 	if err != nil {
@@ -279,4 +290,72 @@ func makeWithdrawItem(ordNumb string, sum float64, processedAt string) Withdraw 
 		ProcessedAt: processedAt,
 	}
 	return *res
+}
+
+func AccrualActions(orderNumber string, sugar *zap.SugaredLogger, accAddress string) (*models.AccrualGet, int) {
+
+	client := &http.Client{}
+	// check order into accrual
+	accrual := &models.AccrualGet{}
+
+	accOrder, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/orders/%s", accAddress, orderNumber), nil)
+	if err != nil {
+		sugar.Infoln("accrual actions: getting order info into the system", err)
+		return accrual, http.StatusInternalServerError
+	}
+	accOrder.Header.Set("Content-Type", "application/json")
+	accResp, _ := client.Do(accOrder)
+	if accResp.StatusCode != 200 {
+		sugar.Infoln(fmt.Sprintf("accrual actions: invalid order status %d", accResp.StatusCode))
+		return accrual, accResp.StatusCode
+	}
+
+	body, err := io.ReadAll(accResp.Body)
+	if err != nil {
+		sugar.Infoln("accrual actions: read body", err)
+		return accrual, http.StatusInternalServerError
+	}
+
+	if err = json.Unmarshal(body, accrual); err != nil {
+		sugar.Infoln("accrual actions: unpack body to json", err)
+		return accrual, http.StatusInternalServerError
+	}
+
+	return accrual, accResp.StatusCode
+
+	// var goodsBody = []byte(`
+	// {
+	// 	"match": "Milka",
+	// 	"reward": 42,
+	// 	"reward_type": "pt"
+	// }
+	// `)
+	// request, err := http.NewRequest(http.MethodPost, "http://127.0.0.1:8080/api/goods", bytes.NewBuffer(goodsBody))
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+	// request.Header.Set("Content-Type", "application/json")
+	// resp, _ := client.Do(request)
+	// fmt.Println("GOOOODS", resp.StatusCode)
+
+	// accBody := []byte(fmt.Sprintf(`
+	// {
+	// 	"order": "%s",
+	// 	"goods": [
+	// 		{
+	// 			"description": "Milka",
+	// 			"price": 700
+	// 		}
+	// 	]
+	// }
+	// `, orderNumber))
+
+	// request, err = http.NewRequest(http.MethodPost, "http://127.0.0.1:8080/api/orders", bytes.NewBuffer(accBody))
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+	// request.Header.Set("Content-Type", "application/json")
+	// resp, _ = client.Do(request)
+	// fmt.Println("ORDERS & GOOOODS", resp.StatusCode)
+
 }

@@ -29,14 +29,15 @@ func run() error {
 		os.Exit(1)
 	}
 
-	handler, err := handlers.New(src, sugar)
+	handler, err := handlers.New(src, sugar, cfg.AccrualAddress)
 	if err != nil {
 		sugar.Infoln(err)
 		src.DB.Close()
 		os.Exit(1)
 	}
 
-	sugar.Infoln("Store DBMS setup successfuly -> %s", cfg.DSN)
+	sugar.Infoln("Setup DBMS successfuly -> %s", cfg.DSN)
+	sugar.Infoln("Accrual system address -> %s", cfg.AccrualAddress)
 	sugar.Infoln("Running server on -> %s", cfg.ServerAddress)
 
 	return http.ListenAndServe(cfg.ServerAddress, handler.InitRouter())

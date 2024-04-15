@@ -183,7 +183,7 @@ func (s *Store) Balance(userID int) (models.WithdrawDB, error) {
 	return *res, nil
 }
 
-func (s *Store) AddOrder(userID int, orderNumber string) error {
+func (s *Store) AddOrder(userID int, orderNumber, accStatus string, accrual float64) error {
 	sql := `
 	select 
 		case when o.user_id = $1 then true else false end is_owner,
@@ -231,14 +231,14 @@ func (s *Store) AddOrder(userID int, orderNumber string) error {
 	insert into ya.orders 
 		(user_id, order_number, status, accrual, uploaded_at)
 	values 
-		($1, $2, 'NEW', 0.00, now())`
+		($1, $2, $3, $4, now())`
 
 	stmt, err = tx.PrepareContext(ctx, sqlAdd)
 	if err != nil {
 		return errors_api.NewAPIError(err, "error during prepare insert", http.StatusInternalServerError)
 	}
 
-	_, err = stmt.ExecContext(ctx, userID, orderNumber)
+	_, err = stmt.ExecContext(ctx, userID, orderNumber, accStatus, accrual)
 	if err != nil {
 		return errors_api.NewAPIError(err, "error during executing insert order", http.StatusInternalServerError)
 	}
@@ -251,7 +251,7 @@ func (s *Store) AddOrder(userID int, orderNumber string) error {
 }
 
 func (s *Store) AddWithdraw(userID int, orderNumber string, sum float64) error {
-	sql := `select count(*) from ya.orders where user_id=$1 and order_number=$2`
+	sql := `select count(*) from ya.withdrawals where order_number=$1`
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
@@ -268,13 +268,13 @@ func (s *Store) AddWithdraw(userID int, orderNumber string, sum float64) error {
 	}
 
 	var foundOrder int
-	err = stmt.QueryRowContext(ctx, userID, orderNumber).Scan(&foundOrder)
+	err = stmt.QueryRowContext(ctx, orderNumber).Scan(&foundOrder)
 	if err != nil {
 		return errors_api.NewAPIError(err, "error during check order", http.StatusInternalServerError)
 	}
 	// order not found
-	if foundOrder == 0 {
-		err := errors.New("the order is there")
+	if foundOrder > 0 {
+		err := errors.New("withdrawas alrrady has the order")
 		return errors_api.NewAPIError(err, "", http.StatusUnprocessableEntity)
 	}
 
