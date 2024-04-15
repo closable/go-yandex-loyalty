@@ -304,7 +304,11 @@ func AccrualActions(orderNumber string, sugar *zap.SugaredLogger, accAddress str
 		return accrual, http.StatusInternalServerError
 	}
 	accOrder.Header.Set("Content-Type", "application/json")
-	accResp, _ := client.Do(accOrder)
+	accResp, err := client.Do(accOrder)
+	if err != err {
+		sugar.Infoln(fmt.Sprintf("accrual actions: invalid %v", err))
+		return accrual, http.StatusInternalServerError
+	}
 	if accResp.StatusCode != 200 {
 		sugar.Infoln(fmt.Sprintf("accrual actions: invalid order status %d", accResp.StatusCode))
 		return accrual, accResp.StatusCode

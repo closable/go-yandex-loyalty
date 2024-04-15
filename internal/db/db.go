@@ -165,7 +165,7 @@ func (s *Store) Balance(userID int) (models.WithdrawDB, error) {
 	sql := `
 	select coalesce(sum(o.accrual), 0) accrual, coalesce(sum(w.sum),0) withdraw
 		from ya.orders o
-		inner join ya.withdrawals w on w.order_number = o.order_number
+		left join ya.withdrawals w on w.order_number = o.order_number
 	where o.user_id=$1 /*and o.status = 'PROCESSED'*/`
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
