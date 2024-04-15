@@ -774,6 +774,7 @@ func addAcrualTestData(acc, order string) {
 	request, _ := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/api/goods", acc), bytes.NewBuffer(goodsBody))
 	request.Header.Set("Content-Type", "application/json")
 	resp, err := client.Do(request)
+	resp.Body.Close()
 	fmt.Println("GOOOODS", err, resp.StatusCode)
 
 	accBody := []byte(fmt.Sprintf(`
@@ -793,5 +794,6 @@ func addAcrualTestData(acc, order string) {
 	}
 	request.Header.Set("Content-Type", "application/json")
 	resp, _ = client.Do(request)
+	resp.Body.Close()
 	fmt.Println("ORDERS & GOOOODS", resp.StatusCode, string(accBody))
 }
