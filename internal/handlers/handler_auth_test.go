@@ -18,8 +18,8 @@ import (
 )
 
 type Balance struct {
-	Current   float64 `json:"current"`
-	Withdrawn float64 `json:"withdrawn"`
+	Current   float32 `json:"current"`
+	Withdrawn float32 `json:"withdrawn"`
 }
 
 var dsn string
@@ -393,7 +393,7 @@ func TestAPIHandler_Balance(t *testing.T) {
 		url        string
 		authAction bool
 		step       int
-		balance    float64
+		balance    float32
 	}
 
 	rnd := rand.Intn(1000)

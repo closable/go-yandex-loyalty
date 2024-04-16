@@ -20,9 +20,9 @@ type Sourcer interface {
 	Login(login, pass string) (int, error)
 	GetOrders(userID int) ([]models.OrdersDB, error)
 	// Balance(userID int) (models.WithdrawDB, error)
-	Balance(userID int) (float64, float64, error)
-	AddOrder(userID int, orderNumber, accStatus string, accrual float64) error
-	AddWithdraw(userID int, orderNumber string, sum float64) error
+	Balance(userID int) (float32, float32, error)
+	AddOrder(userID int, orderNumber, accStatus string, accrual float32) error
+	AddWithdraw(userID int, orderNumber string, sum float32) error
 	GetWithdrawals(userID int) ([]models.WithdrawGetDB, error)
 	PrepareDB() error
 }
@@ -40,16 +40,16 @@ type (
 	Orders struct {
 		Number   string  `json:"number"`
 		Status   string  `json:"status"`
-		Accrual  float64 `json:"accrual"`
+		Accrual  float32 `json:"accrual"`
 		UploadAt string  `json:"upload_at"`
 	}
 	WithdrawGet struct {
 		Order string  `json:"order"`
-		Sum   float64 `json:"sum"`
+		Sum   float32 `json:"sum"`
 	}
 	Withdraw struct {
 		Order       string  `json:"order"`
-		Sum         float64 `json:"sum"`
+		Sum         float32 `json:"sum"`
 		ProcessedAt string  `json:"processed_at"`
 	}
 )

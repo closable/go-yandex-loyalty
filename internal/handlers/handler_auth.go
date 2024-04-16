@@ -77,7 +77,7 @@ func (ah *APIHandler) Orders(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(resp))
 }
 
-func makeOrderItem(ordNumb, status string, accrual float64, uploadAt string) Orders {
+func makeOrderItem(ordNumb, status string, accrual float32, uploadAt string) Orders {
 	var res = &Orders{
 		Number:   ordNumb,
 		Status:   status,
@@ -192,7 +192,7 @@ func (ah *APIHandler) AddOrder(w http.ResponseWriter, r *http.Request) {
 	}
 
 	status := "NEW"
-	accrual := 0.0
+	var accrual float32 = 0.0
 	// if accrual return the result else default
 	if accStatus < 204 {
 		status = acc.Status
@@ -354,7 +354,7 @@ func (ah *APIHandler) Withdrawals(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(resp))
 }
 
-func makeWithdrawItem(ordNumb string, sum float64, processedAt string) Withdraw {
+func makeWithdrawItem(ordNumb string, sum float32, processedAt string) Withdraw {
 	var res = &Withdraw{
 		Order:       ordNumb,
 		Sum:         sum,

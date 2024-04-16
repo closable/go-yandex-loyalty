@@ -161,14 +161,14 @@ func (s *Store) GetOrders(userID int) ([]models.OrdersDB, error) {
 	return res, nil
 }
 
-func (s *Store) Balance(userID int) (float64, float64, error) {
+func (s *Store) Balance(userID int) (float32, float32, error) {
 	// sql := `
 	// select coalesce(sum(o.accrual), 0) accrual, coalesce(sum(w.sum),0) withdraw
 	// 	from ya.orders o
 	// 	left join ya.withdrawals w on w.order_number = o.order_number
 	// where o.user_id=$1`
 	sql := `
-	select sum(o.accrual) current, (select sum(w.sum) from ya.withdrawals w where user_id=$1) withdrawn
+	select coalesce(sum(o.accrual),0) current, coalesce((select sum(w.sum) from ya.withdrawals w where user_id=$1),0) withdrawn
 		from ya.orders o 
 		where user_id=$2`
 
@@ -180,8 +180,8 @@ func (s *Store) Balance(userID int) (float64, float64, error) {
 		return 0, 0, errors_api.NewAPIError(err, "error during prepare", http.StatusInternalServerError)
 	}
 
-	var current float64
-	var withdrawn float64
+	var current float32
+	var withdrawn float32
 
 	err = stmt.QueryRowContext(ctx, userID, userID).Scan(&current, &withdrawn)
 	if err != nil {
@@ -216,7 +216,7 @@ func (s *Store) Balance(userID int) (float64, float64, error) {
 	return current, withdrawn, nil
 }
 
-func (s *Store) AddOrder(userID int, orderNumber, accStatus string, accrual float64) error {
+func (s *Store) AddOrder(userID int, orderNumber, accStatus string, accrual float32) error {
 	sql := `
 	select 
 		case when o.user_id = $1 then true else false end is_owner,
@@ -283,7 +283,7 @@ func (s *Store) AddOrder(userID int, orderNumber, accStatus string, accrual floa
 	return nil
 }
 
-func (s *Store) AddWithdraw(userID int, orderNumber string, sum float64) error {
+func (s *Store) AddWithdraw(userID int, orderNumber string, sum float32) error {
 	// sql := `select count(*) from ya.withdrawals where order_number=$1`
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
@@ -327,7 +327,7 @@ func (s *Store) AddWithdraw(userID int, orderNumber string, sum float64) error {
 	// }
 
 	sql = `select sum from ya.withdrawals where order_number = $1`
-	var o float64
+	var o float32
 	s.DB.QueryRow(sql, orderNumber).Scan(&o)
 
 	fmt.Println("!!! добавление withdraw", res, err, orderNumber, sum, o)
@@ -435,7 +435,7 @@ func (s *Store) NotProcessedOrders() ([]string, error) {
 	return res, nil
 }
 
-func (s *Store) UpdateNotProcessedOrders(order, status string, accrual float64) error {
+func (s *Store) UpdateNotProcessedOrders(order, status string, accrual float32) error {
 	sql := `update ya.orders SET status = $2, accrual = $3 where order_number = $1`
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
