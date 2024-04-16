@@ -162,13 +162,21 @@ func (ah *APIHandler) AddOrder(w http.ResponseWriter, r *http.Request) {
 	}
 
 	acc, accStatus := AccrualActions(orderNumber, &ah.sugar, ah.accAddress)
-	if accStatus > 202 {
-		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("the accrual system has wrong status %d", accStatus))
+	if accStatus >= 400 {
+		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("the accrual system return wrong status %d", accStatus))
 		w.WriteHeader(accStatus)
 		return
 	}
 
-	err = ah.db.AddOrder(userID, orderNumber, acc.Status, acc.Accrual)
+	status := "NEW"
+	accrual := 0.0
+	// if accrual return the result else default
+	if accStatus < 204 {
+		status = acc.Status
+		accrual = acc.Accrual
+	}
+
+	err = ah.db.AddOrder(userID, orderNumber, status, accrual)
 	if err != nil {
 		httpErr, ok := err.(*errors_api.APIHandlerError)
 		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", err)
@@ -297,7 +305,8 @@ func AccrualActions(orderNumber string, sugar *zap.SugaredLogger, accAddress str
 	client := &http.Client{}
 	// check order into accrual
 	accrual := &models.AccrualGet{}
-	fmt.Println("accAddress", accAddress, fmt.Sprintf("%s/api/orders/%s", accAddress, orderNumber))
+
+	sugar.Infoln(fmt.Sprintf("getting info from accrual  %s/api/orders/%s", accAddress, orderNumber))
 	accOrder, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/orders/%s", accAddress, orderNumber), nil)
 	if err != nil {
 		sugar.Infoln("accrual actions: getting order info into the system", err)
@@ -309,8 +318,8 @@ func AccrualActions(orderNumber string, sugar *zap.SugaredLogger, accAddress str
 		sugar.Infoln(fmt.Sprintf("accrual actions: invalid %v", err))
 		return accrual, http.StatusInternalServerError
 	}
-	if accResp.StatusCode != 200 {
-		sugar.Infoln(fmt.Sprintf("accrual actions: invalid order status %d", accResp.StatusCode))
+	if accResp.StatusCode > 202 {
+		sugar.Infoln(fmt.Sprintf("accrual actions: return order %s status %d", orderNumber, accResp.StatusCode))
 		return accrual, accResp.StatusCode
 	}
 

@@ -371,3 +371,56 @@ func (s *Store) PrepareDB() error {
 
 	return nil
 }
+
+func (s *Store) NotProcessedOrders() ([]string, error) {
+	sql := `select order_number from ya.orders where status not in ('INVALID', 'PROCESSED')`
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+	res := make([]string, 0)
+
+	rows, err := s.DB.QueryContext(ctx, sql)
+	if err != nil || rows.Err() != nil {
+		return res, errors_api.NewAPIError(err, "error during query", http.StatusInternalServerError)
+	}
+
+	for rows.Next() {
+		order := ""
+		err = rows.Scan(&order)
+		if err != nil {
+			return res, errors_api.NewAPIError(err, "error during scan", http.StatusInternalServerError)
+		}
+		res = append(res, order)
+
+	}
+	return res, nil
+}
+
+func (s *Store) UpdateNotProcessedOrders(order, status string, accrual float64) error {
+	sql := `update ya.orders SET status = $2, accrual = $3 where order_number = $1`
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+
+	tx, err := s.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return errors_api.NewAPIError(err, "error during begin tx", http.StatusInternalServerError)
+	}
+	defer tx.Rollback()
+
+	stmt, err := tx.PrepareContext(ctx, sql)
+	if err != nil {
+		return errors_api.NewAPIError(err, "error during prepare", http.StatusInternalServerError)
+	}
+
+	_, err = stmt.ExecContext(ctx, order, status, accrual)
+	if err != nil {
+		return errors_api.NewAPIError(err, "error during execute", http.StatusInternalServerError)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return errors_api.NewAPIError(err, "error commit during update order", http.StatusInternalServerError)
+	}
+
+	return nil
+}
