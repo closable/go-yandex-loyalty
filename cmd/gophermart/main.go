@@ -39,7 +39,7 @@ func run() error {
 		os.Exit(1)
 	}
 
-	ticker := time.NewTicker(3 * time.Second)
+	ticker := time.NewTicker(1 * time.Second)
 	done := make(chan bool)
 	go func() {
 		for {

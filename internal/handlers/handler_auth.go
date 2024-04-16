@@ -187,7 +187,7 @@ func (ah *APIHandler) AddOrder(w http.ResponseWriter, r *http.Request) {
 	}
 	ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("added order %s", orderNumber))
 	// w.WriteHeader(http.StatusOK)
-	w.WriteHeader(accStatus)
+	w.WriteHeader(http.StatusAccepted)
 
 }
 
@@ -246,13 +246,32 @@ func (ah *APIHandler) GetWithdraw(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(httpErr.Code())
 		return
 	}
-	ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("withdrawn - %f", withdraw.Withdrawn))
+	ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("order %s withdrawn - %f", req.Order, req.Sum))
 	w.WriteHeader(http.StatusOK)
 }
 
 func (ah *APIHandler) Withdrawals(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	userID, _ := strconv.Atoi(r.FormValue("userID"))
+
+	if userID == 0 {
+		token, _ := r.Cookie("Authorization")
+		headerAuth := r.Header.Get("Authorization")
+
+		if len(token.String()) > 0 {
+			userID = utils.GetUserID(token.Value)
+			w.Header().Add("Authorization", token.Value)
+		}
+
+		if len(headerAuth) > 0 && userID == 0 {
+			userID = utils.GetUserID(headerAuth)
+			w.Header().Add("Authorization", headerAuth)
+		}
+		if userID != 0 {
+			ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", "Restore authorization wihdrawals !")
+		}
+	}
+
 	if userID == 0 {
 		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", "user unauthorized")
 		w.WriteHeader(http.StatusUnauthorized)
