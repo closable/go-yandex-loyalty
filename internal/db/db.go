@@ -162,11 +162,15 @@ func (s *Store) GetOrders(userID int) ([]models.OrdersDB, error) {
 }
 
 func (s *Store) Balance(userID int) (float64, float64, error) {
+	// sql := `
+	// select coalesce(sum(o.accrual), 0) accrual, coalesce(sum(w.sum),0) withdraw
+	// 	from ya.orders o
+	// 	left join ya.withdrawals w on w.order_number = o.order_number
+	// where o.user_id=$1`
 	sql := `
-	select coalesce(sum(o.accrual), 0) accrual, coalesce(sum(w.sum),0) withdraw
-		from ya.orders o
-		left join ya.withdrawals w on w.order_number = o.order_number
-	where o.user_id=$1`
+	select sum(o.accrual) current, (select sum(w.sum) from ya.withdrawals w where user_id=$1) withdrawn
+		from ya.orders o 
+		where user_id=$2`
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
@@ -179,7 +183,7 @@ func (s *Store) Balance(userID int) (float64, float64, error) {
 	var current float64
 	var withdrawn float64
 
-	err = stmt.QueryRowContext(ctx, userID).Scan(&current, &withdrawn)
+	err = stmt.QueryRowContext(ctx, userID, userID).Scan(&current, &withdrawn)
 	if err != nil {
 		return 0, 0, errors_api.NewAPIError(err, "error during query", http.StatusInternalServerError)
 	}
@@ -307,13 +311,13 @@ func (s *Store) AddWithdraw(userID int, orderNumber string, sum float64) error {
 	// 	return errors_api.NewAPIError(err, "", http.StatusUnprocessableEntity)
 	// }
 
-	sql := `insert into ya.withdrawals (order_number, sum, processed_at) values ($1, $2, now())`
+	sql := `insert into ya.withdrawals (user_id, order_number, sum, processed_at) values ($1, $2, $3, now())`
 	stmt, err := s.DB.PrepareContext(ctx, sql)
 	if err != nil {
 		return errors_api.NewAPIError(err, "error during insert prepare", http.StatusInternalServerError)
 	}
 	// add withdraw
-	res, err := stmt.ExecContext(ctx, orderNumber, sum)
+	res, err := stmt.ExecContext(ctx, userID, orderNumber, sum)
 	if err != nil {
 		return errors_api.NewAPIError(err, "error during executing insert withdraw", http.StatusInternalServerError)
 	}
@@ -331,11 +335,12 @@ func (s *Store) AddWithdraw(userID int, orderNumber string, sum float64) error {
 }
 
 func (s *Store) GetWithdrawals(userID int) ([]models.WithdrawGetDB, error) {
-	sql := `
-	select w.order_number, w.sum, w.processed_at
-		from ya.withdrawals w 
-		left join ya.orders o on o.order_number = w.order_number
-		where o.user_id=$1 `
+	// sql := `
+	// select w.order_number, w.sum, w.processed_at
+	// 	from ya.withdrawals w
+	// 	left join ya.orders o on o.order_number = w.order_number
+	// 	where o.user_id=$1 `
+	sql := `select w.order_number, w.sum, w.processed_at from ya.withdrawals w where w.user_id=$1`
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
@@ -388,9 +393,10 @@ func (s *Store) PrepareDB() error {
 	pipe[3] = `CREATE TABLE IF NOT EXISTS ya.withdrawals
 				(
 					id_withdraw bigserial NOT NULL,
+					user_id integer NOT NULL,
 					order_number character varying(20) COLLATE pg_catalog."default" NOT NULL,
 					sum numeric(10,2) DEFAULT 0.0,
-					processed_at time with time zone,
+					processed_at timestamp with time zone,
 					CONSTRAINT withdrawals_pkey PRIMARY KEY (id_withdraw)
 				)`
 
