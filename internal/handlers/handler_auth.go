@@ -258,24 +258,25 @@ func (ah *APIHandler) GetWithdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	withdraw, err := ah.db.Balance(userID)
-	if err != nil {
-		httpErr, ok := err.(*errors_api.APIHandlerError)
-		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", err)
-		if ok {
-			w.WriteHeader(httpErr.Code())
-		}
-		return
-	}
+	// withdraw, err := ah.db.Balance(userID)
+	// if err != nil {
+	// 	httpErr, ok := err.(*errors_api.APIHandlerError)
+	// 	ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", err)
+	// 	if ok {
+	// 		w.WriteHeader(httpErr.Code())
+	// 	}
+	// 	return
+	// }
 
 	// fmt.Println(withdraw.Current, withdraw.Withdrawn, req.Sum)
 
 	// check balance
-	if withdraw.Current-withdraw.Withdrawn < req.Sum {
-		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("balance %f/ withdraw %f", withdraw.Current-withdraw.Withdrawn, req.Sum))
-		w.WriteHeader(http.StatusPaymentRequired)
-		return
-	}
+
+	// if withdraw.Current-withdraw.Withdrawn < req.Sum {
+	// 	ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("balance %f/ withdraw %f", withdraw.Current-withdraw.Withdrawn, req.Sum))
+	// 	w.WriteHeader(http.StatusPaymentRequired)
+	// 	return
+	// }
 
 	err = ah.db.AddWithdraw(userID, req.Order, req.Sum)
 	if err != nil {
@@ -325,9 +326,9 @@ func (ah *APIHandler) Withdrawals(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-
+	fmt.Println("Что за фигня !!!!", userID, orders, err)
 	if len(orders) == 0 {
-		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", "no content")
+		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("no content userID %d", userID))
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
@@ -344,7 +345,7 @@ func (ah *APIHandler) Withdrawals(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("withdrawals - %d", len(body)))
+	ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("userID %d withdrawals - %d", userID, len(body)))
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(resp))
 }
