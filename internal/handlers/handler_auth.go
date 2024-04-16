@@ -124,7 +124,7 @@ func (ah *APIHandler) Balance(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-
+	fmt.Println("еруууунда", withdraw, err)
 	resp, err := json.Marshal(withdraw)
 	if err != nil {
 		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", err)
