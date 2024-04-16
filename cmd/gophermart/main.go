@@ -56,7 +56,6 @@ func run() error {
 				if len(orders) > 0 {
 					backgrounds.SyncAccruals(src, cfg.AccrualAddress, &sugar, orders...)
 				}
-				//fmt.Println("Tick at", t)
 			}
 		}
 	}()
