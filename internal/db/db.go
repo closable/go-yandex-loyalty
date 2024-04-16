@@ -180,7 +180,17 @@ func (s *Store) Balance(userID int) (models.WithdrawDB, error) {
 	if err != nil {
 		return *res, errors_api.NewAPIError(err, "error during query", http.StatusInternalServerError)
 	}
-	fmt.Println("баланс ", res)
+
+	sql = `select w.order_number || '-' || w.sum orders from ya.withdrawals w`
+	orders := make([]string, 0)
+	rows, _ := s.DB.Query(sql)
+	for rows.Next() {
+		s := ""
+		rows.Scan(&s)
+		orders = append(orders, s)
+	}
+
+	fmt.Println("баланс проверка", res, orders)
 	return *res, nil
 }
 
