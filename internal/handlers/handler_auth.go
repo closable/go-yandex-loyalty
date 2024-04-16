@@ -124,9 +124,9 @@ func (ah *APIHandler) Balance(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	fmt.Println("еруууунда", current, withdraw, err)
+
 	body := &models.WithdrawDB{
-		Current:   current,
+		Current:   current - withdraw,
 		Withdrawn: withdraw,
 	}
 	resp, err := json.Marshal(body)
@@ -136,7 +136,7 @@ func (ah *APIHandler) Balance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("userID %d balance/withdraw - %f / %f", userID, current, withdraw))
+	ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("userID %d balance/withdraw - %f / %f", userID, current-withdraw, withdraw))
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(resp))
 }
