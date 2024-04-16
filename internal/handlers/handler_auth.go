@@ -186,7 +186,8 @@ func (ah *APIHandler) AddOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("added order %s", orderNumber))
-	w.WriteHeader(http.StatusOK)
+	// w.WriteHeader(http.StatusOK)
+	w.WriteHeader(accStatus)
 
 }
 
