@@ -184,7 +184,8 @@ func (s *Store) Balance(userID int) (float64, float64, error) {
 		return 0, 0, errors_api.NewAPIError(err, "error during query", http.StatusInternalServerError)
 	}
 
-	sql = `select w.order_number || '-' || w.sum orders from ya.withdrawals w`
+	sql = `select w.order_number || '-' || w.sum || '-'|| (select user_id from ya.orders where order_number = w.order_number) orders 
+	from ya.withdrawals w`
 	orders := make([]string, 0)
 	rows, err := s.DB.Query(sql)
 	if err != nil || rows.Err() != nil {
