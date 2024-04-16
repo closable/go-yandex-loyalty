@@ -90,6 +90,25 @@ func makeOrderItem(ordNumb, status string, accrual float64, uploadAt string) Ord
 func (ah *APIHandler) Balance(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	userID, _ := strconv.Atoi(r.FormValue("userID"))
+
+	if userID == 0 {
+		token, _ := r.Cookie("Authorization")
+		headerAuth := r.Header.Get("Authorization")
+
+		if len(token.String()) > 0 {
+			userID = utils.GetUserID(token.Value)
+			w.Header().Add("Authorization", token.Value)
+		}
+
+		if len(headerAuth) > 0 && userID == 0 {
+			userID = utils.GetUserID(headerAuth)
+			w.Header().Add("Authorization", headerAuth)
+		}
+		if userID != 0 {
+			ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", "Restore authorization balance !")
+		}
+	}
+
 	if userID == 0 {
 		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", "user unauthorized")
 		w.WriteHeader(http.StatusUnauthorized)
@@ -194,6 +213,25 @@ func (ah *APIHandler) AddOrder(w http.ResponseWriter, r *http.Request) {
 func (ah *APIHandler) GetWithdraw(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	userID, _ := strconv.Atoi(r.FormValue("userID"))
+
+	if userID == 0 {
+		token, _ := r.Cookie("Authorization")
+		headerAuth := r.Header.Get("Authorization")
+
+		if len(token.String()) > 0 {
+			userID = utils.GetUserID(token.Value)
+			w.Header().Add("Authorization", token.Value)
+		}
+
+		if len(headerAuth) > 0 && userID == 0 {
+			userID = utils.GetUserID(headerAuth)
+			w.Header().Add("Authorization", headerAuth)
+		}
+		if userID != 0 {
+			ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", "Restore authorization getwithdraw !")
+		}
+	}
+
 	if userID == 0 {
 		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", "user unauthorized")
 		w.WriteHeader(http.StatusUnauthorized)
