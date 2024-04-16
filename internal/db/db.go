@@ -180,6 +180,7 @@ func (s *Store) Balance(userID int) (models.WithdrawDB, error) {
 	if err != nil {
 		return *res, errors_api.NewAPIError(err, "error during query", http.StatusInternalServerError)
 	}
+	fmt.Println("баланс ", res)
 	return *res, nil
 }
 
