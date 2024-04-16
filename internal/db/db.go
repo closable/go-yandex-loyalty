@@ -183,7 +183,10 @@ func (s *Store) Balance(userID int) (models.WithdrawDB, error) {
 
 	sql = `select w.order_number || '-' || w.sum orders from ya.withdrawals w`
 	orders := make([]string, 0)
-	rows, _ := s.DB.Query(sql)
+	rows, err := s.DB.Query(sql)
+	if err != nil || rows.Err() != nil {
+		fmt.Println("ойойойойо", err)
+	}
 	for rows.Next() {
 		s := ""
 		rows.Scan(&s)
