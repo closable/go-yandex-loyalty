@@ -284,7 +284,7 @@ func (s *Store) AddWithdraw(userID int, orderNumber string, sum float64) error {
 		return errors_api.NewAPIError(err, "error during insert prepare", http.StatusInternalServerError)
 	}
 	// add withdraw
-	_, err = stmt.ExecContext(ctx, orderNumber, sum)
+	res, err := stmt.ExecContext(ctx, orderNumber, sum)
 	if err != nil {
 		return errors_api.NewAPIError(err, "error during executing insert withdraw", http.StatusInternalServerError)
 	}
@@ -292,7 +292,7 @@ func (s *Store) AddWithdraw(userID int, orderNumber string, sum float64) error {
 	if err = tx.Commit(); err != nil {
 		return errors_api.NewAPIError(err, "error commit during add withdraw", http.StatusInternalServerError)
 	}
-
+	fmt.Println("!!! добавление withdraw", res, err, orderNumber, sum)
 	return nil
 }
 
