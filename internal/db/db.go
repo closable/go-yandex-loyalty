@@ -256,11 +256,11 @@ func (s *Store) AddWithdraw(userID int, orderNumber string, sum float64) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
-	tx, err := s.DB.BeginTx(ctx, nil)
-	if err != nil {
-		return errors_api.NewAPIError(err, "error during begin tx", http.StatusInternalServerError)
-	}
-	defer tx.Rollback()
+	// tx, err := s.DB.BeginTx(ctx, nil)
+	// if err != nil {
+	// 	return errors_api.NewAPIError(err, "error during begin tx", http.StatusInternalServerError)
+	// }
+	// defer tx.Rollback()
 
 	// stmt, err := tx.PrepareContext(ctx, sql)
 	// if err != nil {
@@ -279,7 +279,7 @@ func (s *Store) AddWithdraw(userID int, orderNumber string, sum float64) error {
 	// }
 
 	sql := `insert into ya.withdrawals (order_number, sum, processed_at) values ($1, $2, now())`
-	stmt, err := tx.PrepareContext(ctx, sql)
+	stmt, err := s.DB.PrepareContext(ctx, sql)
 	if err != nil {
 		return errors_api.NewAPIError(err, "error during insert prepare", http.StatusInternalServerError)
 	}
@@ -289,10 +289,15 @@ func (s *Store) AddWithdraw(userID int, orderNumber string, sum float64) error {
 		return errors_api.NewAPIError(err, "error during executing insert withdraw", http.StatusInternalServerError)
 	}
 
-	if err = tx.Commit(); err != nil {
-		return errors_api.NewAPIError(err, "error commit during add withdraw", http.StatusInternalServerError)
-	}
-	fmt.Println("!!! добавление withdraw", res, err, orderNumber, sum)
+	// if err = tx.Commit(); err != nil {
+	// 	return errors_api.NewAPIError(err, "error commit during add withdraw", http.StatusInternalServerError)
+	// }
+
+	sql = `select sum from ya.withdrawals where order_number = $1`
+	var o float64
+	s.DB.QueryRow(sql, orderNumber).Scan(&o)
+
+	fmt.Println("!!! добавление withdraw", res, err, orderNumber, sum, o)
 	return nil
 }
 
