@@ -251,7 +251,7 @@ func (s *Store) AddOrder(userID int, orderNumber, accStatus string, accrual floa
 }
 
 func (s *Store) AddWithdraw(userID int, orderNumber string, sum float64) error {
-	sql := `select count(*) from ya.withdrawals where order_number=$1`
+	// sql := `select count(*) from ya.withdrawals where order_number=$1`
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
@@ -262,25 +262,24 @@ func (s *Store) AddWithdraw(userID int, orderNumber string, sum float64) error {
 	}
 	defer tx.Rollback()
 
+	// stmt, err := tx.PrepareContext(ctx, sql)
+	// if err != nil {
+	// 	return errors_api.NewAPIError(err, "error during prepare", http.StatusInternalServerError)
+	// }
+
+	// var foundOrder int
+	// err = stmt.QueryRowContext(ctx, orderNumber).Scan(&foundOrder)
+	// if err != nil {
+	// 	return errors_api.NewAPIError(err, "error during check order", http.StatusInternalServerError)
+	// }
+	// // order not found
+	// if foundOrder > 0 {
+	// 	err := errors.New("withdrawals alrrady has the order")
+	// 	return errors_api.NewAPIError(err, "", http.StatusUnprocessableEntity)
+	// }
+
+	sql := `insert into ya.withdrawals (order_number, sum, processed_at) values ($1, $2, now())`
 	stmt, err := tx.PrepareContext(ctx, sql)
-	if err != nil {
-		return errors_api.NewAPIError(err, "error during prepare", http.StatusInternalServerError)
-	}
-
-	var foundOrder int
-	err = stmt.QueryRowContext(ctx, orderNumber).Scan(&foundOrder)
-	if err != nil {
-		return errors_api.NewAPIError(err, "error during check order", http.StatusInternalServerError)
-	}
-	// order not found
-	if foundOrder > 0 {
-		err := errors.New("withdrawas alrrady has the order")
-		return errors_api.NewAPIError(err, "", http.StatusUnprocessableEntity)
-	}
-
-	sql = `
-	insert into ya.withdrawals (order_number, sum, processed_at) values ($1, $2, now())`
-	stmt, err = tx.PrepareContext(ctx, sql)
 	if err != nil {
 		return errors_api.NewAPIError(err, "error during insert prepare", http.StatusInternalServerError)
 	}

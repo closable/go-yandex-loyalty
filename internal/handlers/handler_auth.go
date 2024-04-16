@@ -132,7 +132,7 @@ func (ah *APIHandler) Balance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("balance/withdraw - %f / %f", withdraw.Current, withdraw.Withdrawn))
+	ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("userID %d balance/withdraw - %f / %f", userID, withdraw.Current, withdraw.Withdrawn))
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(resp))
 }
@@ -284,7 +284,7 @@ func (ah *APIHandler) GetWithdraw(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(httpErr.Code())
 		return
 	}
-	ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("order %s withdrawn - %f", req.Order, req.Sum))
+	ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("userID %d order %s withdrawn - %f", userID, req.Order, req.Sum))
 	w.WriteHeader(http.StatusOK)
 }
 
