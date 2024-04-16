@@ -19,7 +19,8 @@ type Sourcer interface {
 	AddUser(login, pass string) error
 	Login(login, pass string) (int, error)
 	GetOrders(userID int) ([]models.OrdersDB, error)
-	Balance(userID int) (models.WithdrawDB, error)
+	// Balance(userID int) (models.WithdrawDB, error)
+	Balance(userID int) (float64, float64, error)
 	AddOrder(userID int, orderNumber, accStatus string, accrual float64) error
 	AddWithdraw(userID int, orderNumber string, sum float64) error
 	GetWithdrawals(userID int) ([]models.WithdrawGetDB, error)

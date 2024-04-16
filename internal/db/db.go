@@ -161,7 +161,7 @@ func (s *Store) GetOrders(userID int) ([]models.OrdersDB, error) {
 	return res, nil
 }
 
-func (s *Store) Balance(userID int) (models.WithdrawDB, error) {
+func (s *Store) Balance(userID int) (float64, float64, error) {
 	sql := `
 	select coalesce(sum(o.accrual), 0) accrual, coalesce(sum(w.sum),0) withdraw
 		from ya.orders o
@@ -170,15 +170,18 @@ func (s *Store) Balance(userID int) (models.WithdrawDB, error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
-	res := &models.WithdrawDB{}
+	//res := &models.WithdrawDB{}
 	stmt, err := s.DB.PrepareContext(ctx, sql)
 	if err != nil {
-		return *res, errors_api.NewAPIError(err, "error during prepare", http.StatusInternalServerError)
+		return 0, 0, errors_api.NewAPIError(err, "error during prepare", http.StatusInternalServerError)
 	}
 
-	err = stmt.QueryRowContext(ctx, userID).Scan(&res.Current, &res.Withdrawn)
+	var current float64
+	var withdrawn float64
+
+	err = stmt.QueryRowContext(ctx, userID).Scan(&current, &withdrawn)
 	if err != nil {
-		return *res, errors_api.NewAPIError(err, "error during query", http.StatusInternalServerError)
+		return 0, 0, errors_api.NewAPIError(err, "error during query", http.StatusInternalServerError)
 	}
 
 	sql = `select w.order_number || '-' || w.sum orders from ya.withdrawals w`
@@ -193,8 +196,8 @@ func (s *Store) Balance(userID int) (models.WithdrawDB, error) {
 		orders = append(orders, s)
 	}
 
-	fmt.Println("баланс проверка", res, orders)
-	return *res, nil
+	fmt.Println("баланс проверка", current, withdrawn, orders)
+	return current, withdrawn, nil
 }
 
 func (s *Store) AddOrder(userID int, orderNumber, accStatus string, accrual float64) error {

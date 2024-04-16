@@ -23,7 +23,6 @@ var (
 
 func ParseConfigEnv() {
 	env.Parse(&configEnv)
-	fmt.Println("111", configEnv)
 }
 
 func ParseFlags() {
