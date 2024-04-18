@@ -171,7 +171,6 @@ func (ah *APIHandler) AddOrder(w http.ResponseWriter, r *http.Request) {
 	}
 
 	orderNumber := string(body)
-	fmt.Println(1)
 	if ok := utils.CheckOrderByLuna(orderNumber); !ok {
 		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("error order number %s", orderNumber))
 		w.WriteHeader(http.StatusUnprocessableEntity)
@@ -198,9 +197,11 @@ func (ah *APIHandler) AddOrder(w http.ResponseWriter, r *http.Request) {
 		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", err)
 		if errors.Is(errorsapi.ErrorConflict, err) {
 			w.WriteHeader(http.StatusConflict)
-			return
+		} else if errors.Is(errorsapi.ErrorInfoFound, err) {
+			w.WriteHeader(http.StatusOK)
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
 		}
-		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("added order %s", orderNumber))

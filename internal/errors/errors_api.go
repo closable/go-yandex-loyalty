@@ -13,6 +13,7 @@ var (
 	ErrorBeginTx      = errors.New("error during start transaction")
 	ErrorRegInfo      = errors.New("part of register information is empty")
 	ErrorConflict     = errors.New("informaion conflict")
+	ErrorInfoFound    = errors.New("informaion already present (it's not error)")
 )
 
 type APIHandlerError struct {

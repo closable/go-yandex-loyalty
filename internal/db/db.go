@@ -209,7 +209,7 @@ func (s *Store) AddOrder(userID int, orderNumber, accStatus string, accrual floa
 		if !isOwner {
 			return errors_api.ErrorConflict
 		} else {
-			return nil
+			return errors_api.ErrorInfoFound
 		}
 	}
 
