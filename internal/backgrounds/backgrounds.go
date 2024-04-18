@@ -1,6 +1,7 @@
 package backgrounds
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/closable/go-yandex-loyalty/internal/db"
@@ -20,7 +21,7 @@ func SyncAccruals(db *db.Store, acc string, sugar *zap.SugaredLogger, orders ...
 			if status < 204 {
 				err := db.UpdateNotProcessedOrders(res.Order, res.Status, res.Accrual)
 				if err != nil {
-					sugar.Infoln("executing err", err)
+					sugar.Infoln(fmt.Sprintf("background sync order %s operation failed %s", order, err))
 				}
 				sugar.Infoln("background sync order complete", order)
 			}

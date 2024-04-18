@@ -2,12 +2,13 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"strconv"
 
-	errors_api "github.com/closable/go-yandex-loyalty/internal/errors"
+	errorsapi "github.com/closable/go-yandex-loyalty/internal/errors"
 	"github.com/closable/go-yandex-loyalty/internal/utils"
 	"github.com/closable/go-yandex-loyalty/models"
 	"go.uber.org/zap"
@@ -45,11 +46,8 @@ func (ah *APIHandler) Orders(w http.ResponseWriter, r *http.Request) {
 
 	orders, err := ah.db.GetOrders(userID)
 	if err != nil {
-		httpErr, ok := err.(*errors_api.APIHandlerError)
-		if ok {
-			ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", err)
-			w.WriteHeader(httpErr.Code())
-		}
+		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -118,10 +116,7 @@ func (ah *APIHandler) Balance(w http.ResponseWriter, r *http.Request) {
 	current, withdraw, err := ah.db.Balance(userID)
 	if err != nil {
 		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", err)
-		httpErr, ok := err.(*errors_api.APIHandlerError)
-		if ok {
-			w.WriteHeader(httpErr.Code())
-		}
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -154,13 +149,11 @@ func (ah *APIHandler) AddOrder(w http.ResponseWriter, r *http.Request) {
 		if len(token.String()) > 0 {
 			userID = utils.GetUserID(token.Value)
 			w.Header().Add("Authorization", token.Value)
-			//fmt.Printf("user get from existing cookies %d\n", userID)
 		}
 
 		if len(headerAuth) > 0 && userID == 0 {
 			userID = utils.GetUserID(headerAuth)
 			w.Header().Add("Authorization", headerAuth)
-			//fmt.Printf("user get from existing header %d\n", userID)
 		}
 	}
 
@@ -178,6 +171,7 @@ func (ah *APIHandler) AddOrder(w http.ResponseWriter, r *http.Request) {
 	}
 
 	orderNumber := string(body)
+	fmt.Println(1)
 	if ok := utils.CheckOrderByLuna(orderNumber); !ok {
 		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("error order number %s", orderNumber))
 		w.WriteHeader(http.StatusUnprocessableEntity)
@@ -201,17 +195,16 @@ func (ah *APIHandler) AddOrder(w http.ResponseWriter, r *http.Request) {
 
 	err = ah.db.AddOrder(userID, orderNumber, status, accrual)
 	if err != nil {
-		httpErr, ok := err.(*errors_api.APIHandlerError)
 		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", err)
-		if ok {
-			w.WriteHeader(httpErr.Code())
+		if errors.Is(errorsapi.ErrorConflict, err) {
+			w.WriteHeader(http.StatusConflict)
+			return
 		}
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("added order %s", orderNumber))
-	// w.WriteHeader(http.StatusOK)
 	w.WriteHeader(http.StatusAccepted)
-
 }
 
 func (ah *APIHandler) GetWithdraw(w http.ResponseWriter, r *http.Request) {
@@ -262,31 +255,24 @@ func (ah *APIHandler) GetWithdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// withdraw, err := ah.db.Balance(userID)
-	// if err != nil {
-	// 	httpErr, ok := err.(*errors_api.APIHandlerError)
-	// 	ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", err)
-	// 	if ok {
-	// 		w.WriteHeader(httpErr.Code())
-	// 	}
-	// 	return
-	// }
+	current, withdrawn, err := ah.db.Balance(userID)
+	if err != nil {
+		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", err)
+		w.WriteHeader(http.StatusInternalServerError)
 
-	// fmt.Println(withdraw.Current, withdraw.Withdrawn, req.Sum)
+	}
 
 	// check balance
-
-	// if withdraw.Current-withdraw.Withdrawn < req.Sum {
-	// 	ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("balance %f/ withdraw %f", withdraw.Current-withdraw.Withdrawn, req.Sum))
-	// 	w.WriteHeader(http.StatusPaymentRequired)
-	// 	return
-	// }
+	if current-withdrawn < req.Sum {
+		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("balance %f/ withdraw %f", current-withdrawn, req.Sum))
+		w.WriteHeader(http.StatusPaymentRequired)
+		return
+	}
 
 	err = ah.db.AddWithdraw(userID, req.Order, req.Sum)
 	if err != nil {
 		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", err)
-		httpErr, _ := err.(*errors_api.APIHandlerError)
-		w.WriteHeader(httpErr.Code())
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("userID %d order %s withdrawn - %f", userID, req.Order, req.Sum))
@@ -324,13 +310,10 @@ func (ah *APIHandler) Withdrawals(w http.ResponseWriter, r *http.Request) {
 	orders, err := ah.db.GetWithdrawals(userID)
 	if err != nil {
 		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", err)
-		httpErr, ok := err.(*errors_api.APIHandlerError)
-		if ok {
-			w.WriteHeader(httpErr.Code())
-		}
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	fmt.Println("Что за фигня !!!!", userID, orders, err)
+
 	if len(orders) == 0 {
 		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", fmt.Sprintf("no content userID %d", userID))
 		w.WriteHeader(http.StatusNoContent)

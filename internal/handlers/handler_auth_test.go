@@ -192,6 +192,7 @@ func TestAPIHandler_AddOrder(t *testing.T) {
 		}
 
 		if tt.wants.statusCode != w.Code {
+			fmt.Println(tt.name, w.Code, tt.wants.statusCode, userID, orderTest)
 			t.Errorf("different status code wants- %v actual- %v", tt.wants.statusCode, w.Code)
 		}
 	}
@@ -477,9 +478,9 @@ func TestAPIHandler_Balance(t *testing.T) {
 			},
 		},
 		{
-			name: "Login new user",
+			name: "Login new user pass 0",
 			wants: wants{
-				body:       fmt.Sprintf(`{"login": "test%d", "password": "test*%d"}`, rndNext, rndNext),
+				body:       fmt.Sprintf(`{"login": "test%d", "password": "test%d"}`, rndNext, 0),
 				method:     "POST",
 				url:        "/api/user/login",
 				statusCode: http.StatusUnauthorized,
@@ -532,6 +533,7 @@ func TestAPIHandler_Balance(t *testing.T) {
 			r.PostForm = values
 
 			ah.Balance(w, r)
+			fmt.Println("!!!!", userID, w.Code, tt.wants.url, tt.name, tt.wants.statusCode)
 			if w.Code == http.StatusOK {
 				body, _ := io.ReadAll(w.Body)
 				//fmt.Println("orders", string(body))

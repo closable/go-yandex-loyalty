@@ -3,10 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
-	"net/http"
-	"strings"
 	"time"
 
 	errors_api "github.com/closable/go-yandex-loyalty/internal/errors"
@@ -36,11 +33,9 @@ func (s *Store) GetConn() (*sql.Conn, error) {
 }
 
 func (s *Store) ValidateRegisterInfo(login, pass string) error {
-	var errMessage string
 	// invaid registerinformation
 	if len(login) == 0 || len(pass) == 0 {
-		errMessage = "part of register information is empty"
-		return errors_api.NewAPIError(errors.New("login or pass empty"), errMessage, http.StatusBadRequest)
+		return errors_api.ErrorRegInfo
 	}
 
 	// user is present
@@ -50,18 +45,17 @@ func (s *Store) ValidateRegisterInfo(login, pass string) error {
 
 	stmt, err := s.DB.PrepareContext(ctx, sql)
 	if err != nil {
-		return errors_api.NewAPIError(err, "error during prepare", http.StatusInternalServerError)
+		return fmt.Errorf("%s %w", errors_api.ErrorPrepareQuery.Error(), err)
 	}
 
 	var rows int
 	err = stmt.QueryRowContext(ctx, login).Scan(&rows)
 	if err != nil {
-		return errors_api.NewAPIError(err, "error during executing", http.StatusInternalServerError)
+		return fmt.Errorf("%s %w", errors_api.ErrorExecQuery.Error(), err)
 	}
 
 	if rows > 0 {
-		userPresentErr := errors.New("user is present")
-		return errors_api.NewAPIError(userPresentErr, "login already present", http.StatusConflict)
+		return errors_api.ErrorConflict
 	}
 
 	return nil
@@ -74,59 +68,53 @@ func (s *Store) AddUser(login, pass string) error {
 
 	tx, err := s.DB.BeginTx(ctx, nil)
 	if err != nil {
-		return errors_api.NewAPIError(err, "error during begin tx", http.StatusInternalServerError)
+		return fmt.Errorf("%s %w", errors_api.ErrorBeginTx.Error(), err)
 	}
 	defer tx.Rollback()
 
 	stmt, err := tx.PrepareContext(ctx, sql)
 	if err != nil {
-		return errors_api.NewAPIError(err, "error during prepare execution", http.StatusInternalServerError)
+		return fmt.Errorf("%s %w", errors_api.ErrorPrepareQuery.Error(), err)
 	}
 
 	_, err = stmt.ExecContext(ctx, login, pass)
 	if err != nil {
-		return errors_api.NewAPIError(err, "error during add pocess", http.StatusInternalServerError)
+		return fmt.Errorf("%s %w", errors_api.ErrorExecQuery.Error(), err)
 	}
 
 	if err = tx.Commit(); err != nil {
-		return errors_api.NewAPIError(err, "error commit during add user", http.StatusInternalServerError)
+		return fmt.Errorf("%s %w", errors_api.ErrorExecCommit.Error(), err)
 	}
 
 	return nil
 }
 
 func (s *Store) Login(login, pass string) (int, error) {
-	sql := `
+	sqlString := `
 	select user_id  
 		from ya.users u 
 	where u.user_name = $1 and u.user_passw = sha256($2)::text and status`
 
 	// invaid registerinformation
 	if len(login) == 0 || len(pass) == 0 {
-		errMessage := "part of register information is empty"
-		return 0, errors_api.NewAPIError(errors.New("login or pass empty"), errMessage, http.StatusBadRequest)
+		return 0, errors_api.ErrorRegInfo
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
-	stmt, err := s.DB.PrepareContext(ctx, sql)
+	stmt, err := s.DB.PrepareContext(ctx, sqlString)
 	if err != nil {
-		return 0, errors_api.NewAPIError(err, "error during prepare", http.StatusInternalServerError)
+		return 0, fmt.Errorf("%s %w", errors_api.ErrorPrepareQuery.Error(), err)
 	}
 
 	var userID int
 	err = stmt.QueryRowContext(ctx, login, pass).Scan(&userID)
 	if err != nil {
-		if strings.Contains(err.Error(), "no rows") {
-			return 0, errors_api.NewAPIError(err, "user id not found", http.StatusUnauthorized)
-
-		} else {
-			return 0, errors_api.NewAPIError(err, "error during executing", http.StatusInternalServerError)
+		if err != sql.ErrNoRows {
+			return 0, fmt.Errorf("%s %w", errors_api.ErrorExecQuery.Error(), err)
 		}
-
 	}
-
 	return userID, nil
 }
 
@@ -141,19 +129,19 @@ func (s *Store) GetOrders(userID int) ([]models.OrdersDB, error) {
 	res := make([]models.OrdersDB, 0)
 	stmt, err := s.DB.PrepareContext(ctx, sql)
 	if err != nil {
-		return res, errors_api.NewAPIError(err, "error during prepare", http.StatusInternalServerError)
+		return res, fmt.Errorf("%s %w", errors_api.ErrorPrepareQuery.Error(), err)
 	}
 
 	rows, err := stmt.QueryContext(ctx, userID)
 	if err != nil || rows.Err() != nil {
-		return res, errors_api.NewAPIError(err, "error during query", http.StatusInternalServerError)
+		return res, fmt.Errorf("%s %w", errors_api.ErrorExecQuery.Error(), err)
 	}
 
 	for rows.Next() {
 		item := models.OrdersDB{}
 		err = rows.Scan(&item.OrderNumber, &item.Status, &item.Accrual, &item.UploadAt)
 		if err != nil {
-			return res, errors_api.NewAPIError(err, "error during scan", http.StatusInternalServerError)
+			return res, fmt.Errorf("%s %w", errors_api.ErrorScanQuery.Error(), err)
 		}
 		res = append(res, item)
 
@@ -162,11 +150,6 @@ func (s *Store) GetOrders(userID int) ([]models.OrdersDB, error) {
 }
 
 func (s *Store) Balance(userID int) (float32, float32, error) {
-	// sql := `
-	// select coalesce(sum(o.accrual), 0) accrual, coalesce(sum(w.sum),0) withdraw
-	// 	from ya.orders o
-	// 	left join ya.withdrawals w on w.order_number = o.order_number
-	// where o.user_id=$1`
 	sql := `
 	select coalesce(sum(o.accrual),0) current, coalesce((select sum(w.sum) from ya.withdrawals w where user_id=$1),0) withdrawn
 		from ya.orders o 
@@ -177,7 +160,7 @@ func (s *Store) Balance(userID int) (float32, float32, error) {
 	//res := &models.WithdrawDB{}
 	stmt, err := s.DB.PrepareContext(ctx, sql)
 	if err != nil {
-		return 0, 0, errors_api.NewAPIError(err, "error during prepare", http.StatusInternalServerError)
+		return 0, 0, fmt.Errorf("%s %w", errors_api.ErrorPrepareQuery.Error(), err)
 	}
 
 	var current float32
@@ -185,39 +168,13 @@ func (s *Store) Balance(userID int) (float32, float32, error) {
 
 	err = stmt.QueryRowContext(ctx, userID, userID).Scan(&current, &withdrawn)
 	if err != nil {
-		return 0, 0, errors_api.NewAPIError(err, "error during query", http.StatusInternalServerError)
+		return 0, 0, fmt.Errorf("%s %w", errors_api.ErrorExecQuery.Error(), err)
 	}
-
-	sql = `select user_id || '-' || order_number from ya.orders`
-	data := make([]string, 0)
-	rows, err := s.DB.Query(sql)
-	if err != nil || rows.Err() != nil {
-		fmt.Println("ойойойойо", err)
-	}
-	for rows.Next() {
-		s := ""
-		rows.Scan(&s)
-		data = append(data, s)
-	}
-
-	sql = `select w.order_number || '-' || w.sum  orders from ya.withdrawals w`
-	orders := make([]string, 0)
-	rows, err = s.DB.Query(sql)
-	if err != nil || rows.Err() != nil {
-		fmt.Println("ойойойойо", err)
-	}
-	for rows.Next() {
-		s := ""
-		rows.Scan(&s)
-		orders = append(orders, s)
-	}
-
-	fmt.Println("баланс проверка", current, withdrawn, orders, data)
 	return current, withdrawn, nil
 }
 
 func (s *Store) AddOrder(userID int, orderNumber, accStatus string, accrual float32) error {
-	sql := `
+	sqlString := `
 	select 
 		case when o.user_id = $1 then true else false end is_owner,
 		case when o.status = 'PROCESSING' then 202
@@ -231,33 +188,29 @@ func (s *Store) AddOrder(userID int, orderNumber, accStatus string, accrual floa
 
 	tx, err := s.DB.BeginTx(ctx, nil)
 	if err != nil {
-		return errors_api.NewAPIError(err, "error during begin tx", http.StatusInternalServerError)
+		return fmt.Errorf("%s %w", errors_api.ErrorBeginTx.Error(), err)
 	}
 	defer tx.Rollback()
 
-	stmt, err := tx.PrepareContext(ctx, sql)
+	stmt, err := tx.PrepareContext(ctx, sqlString)
 	if err != nil {
-		return errors_api.NewAPIError(err, "error during prepare", http.StatusInternalServerError)
+		return fmt.Errorf("%s %w", errors_api.ErrorPrepareQuery.Error(), err)
 	}
 
 	var isOwner bool
 	var status int
 
 	err = stmt.QueryRowContext(ctx, userID, orderNumber).Scan(&isOwner, &status)
-	if err != nil && !strings.Contains(err.Error(), "no rows") {
-		return errors_api.NewAPIError(err, "error during execute", http.StatusInternalServerError)
+	if err != nil && err != sql.ErrNoRows {
+		return fmt.Errorf("%s %w", errors_api.ErrorExecQuery.Error(), err)
 	}
 
-	//fmt.Println(isOwner, status, err)
-
 	if status != 0 {
-		err := errors.New("the data is already there")
 		if !isOwner {
-			return errors_api.NewAPIError(err, "", http.StatusConflict)
+			return errors_api.ErrorConflict
 		} else {
-			return errors_api.NewAPIError(err, "", status) // only 202, 202
+			return nil
 		}
-
 	}
 
 	sqlAdd := `
@@ -268,98 +221,71 @@ func (s *Store) AddOrder(userID int, orderNumber, accStatus string, accrual floa
 
 	stmt, err = tx.PrepareContext(ctx, sqlAdd)
 	if err != nil {
-		return errors_api.NewAPIError(err, "error during prepare insert", http.StatusInternalServerError)
+		return fmt.Errorf("%s %w", errors_api.ErrorPrepareQuery.Error(), err)
 	}
 
 	_, err = stmt.ExecContext(ctx, userID, orderNumber, accStatus, accrual)
 	if err != nil {
-		return errors_api.NewAPIError(err, "error during executing insert order", http.StatusInternalServerError)
+		return fmt.Errorf("%s %w", errors_api.ErrorExecQuery.Error(), err)
 	}
 
 	if err = tx.Commit(); err != nil {
-		return errors_api.NewAPIError(err, "error commit during add order", http.StatusInternalServerError)
+		return fmt.Errorf("%s %w", errors_api.ErrorExecCommit.Error(), err)
 	}
-
 	return nil
 }
 
 func (s *Store) AddWithdraw(userID int, orderNumber string, sum float32) error {
-	// sql := `select count(*) from ya.withdrawals where order_number=$1`
+	sql := `insert into ya.withdrawals (user_id, order_number, sum, processed_at) values ($1, $2, $3, now())`
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
-	// tx, err := s.DB.BeginTx(ctx, nil)
-	// if err != nil {
-	// 	return errors_api.NewAPIError(err, "error during begin tx", http.StatusInternalServerError)
-	// }
-	// defer tx.Rollback()
-
-	// stmt, err := tx.PrepareContext(ctx, sql)
-	// if err != nil {
-	// 	return errors_api.NewAPIError(err, "error during prepare", http.StatusInternalServerError)
-	// }
-
-	// var foundOrder int
-	// err = stmt.QueryRowContext(ctx, orderNumber).Scan(&foundOrder)
-	// if err != nil {
-	// 	return errors_api.NewAPIError(err, "error during check order", http.StatusInternalServerError)
-	// }
-	// // order not found
-	// if foundOrder > 0 {
-	// 	err := errors.New("withdrawals alrrady has the order")
-	// 	return errors_api.NewAPIError(err, "", http.StatusUnprocessableEntity)
-	// }
-
-	sql := `insert into ya.withdrawals (user_id, order_number, sum, processed_at) values ($1, $2, $3, now())`
-	stmt, err := s.DB.PrepareContext(ctx, sql)
+	tx, err := s.DB.BeginTx(ctx, nil)
 	if err != nil {
-		return errors_api.NewAPIError(err, "error during insert prepare", http.StatusInternalServerError)
+		return fmt.Errorf("%s %w", errors_api.ErrorBeginTx.Error(), err)
+	}
+	defer tx.Rollback()
+
+	stmt, err := tx.PrepareContext(ctx, sql)
+	if err != nil {
+		return fmt.Errorf("%s %w", errors_api.ErrorPrepareQuery.Error(), err)
 	}
 	// add withdraw
-	res, err := stmt.ExecContext(ctx, userID, orderNumber, sum)
+	_, err = stmt.ExecContext(ctx, userID, orderNumber, sum)
 	if err != nil {
-		return errors_api.NewAPIError(err, "error during executing insert withdraw", http.StatusInternalServerError)
+		return fmt.Errorf("%s %w", errors_api.ErrorExecQuery.Error(), err)
 	}
 
-	// if err = tx.Commit(); err != nil {
-	// 	return errors_api.NewAPIError(err, "error commit during add withdraw", http.StatusInternalServerError)
-	// }
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("%s %w", errors_api.ErrorExecCommit.Error(), err)
+	}
 
-	sql = `select sum from ya.withdrawals where order_number = $1`
-	var o float32
-	s.DB.QueryRow(sql, orderNumber).Scan(&o)
-
-	fmt.Println("!!! добавление withdraw", res, err, orderNumber, sum, o)
 	return nil
 }
 
 func (s *Store) GetWithdrawals(userID int) ([]models.WithdrawGetDB, error) {
-	// sql := `
-	// select w.order_number, w.sum, w.processed_at
-	// 	from ya.withdrawals w
-	// 	left join ya.orders o on o.order_number = w.order_number
-	// 	where o.user_id=$1 `
 	sql := `select w.order_number, w.sum, w.processed_at from ya.withdrawals w where w.user_id=$1`
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 	res := make([]models.WithdrawGetDB, 0)
+
 	stmt, err := s.DB.PrepareContext(ctx, sql)
 	if err != nil {
-		return res, errors_api.NewAPIError(err, "error during prepare", http.StatusInternalServerError)
+		return res, fmt.Errorf("%s %w", errors_api.ErrorPrepareQuery.Error(), err)
 	}
 
 	rows, err := stmt.QueryContext(ctx, userID)
 	if err != nil || rows.Err() != nil {
-		return res, errors_api.NewAPIError(err, "error during query", http.StatusInternalServerError)
+		return res, fmt.Errorf("%s %w", errors_api.ErrorExecQuery.Error(), err)
 	}
 
 	for rows.Next() {
 		item := models.WithdrawGetDB{}
 		err = rows.Scan(&item.Order, &item.Sum, &item.ProcessedAt)
 		if err != nil {
-			return res, errors_api.NewAPIError(err, "error during scan", http.StatusInternalServerError)
+			return res, fmt.Errorf("%s %w", errors_api.ErrorScanQuery.Error(), err)
 		}
 		res = append(res, item)
 
@@ -420,14 +346,14 @@ func (s *Store) NotProcessedOrders() ([]string, error) {
 
 	rows, err := s.DB.QueryContext(ctx, sql)
 	if err != nil || rows.Err() != nil {
-		return res, errors_api.NewAPIError(err, "error during query", http.StatusInternalServerError)
+		return res, fmt.Errorf("%s %w", errors_api.ErrorExecQuery.Error(), err)
 	}
 
 	for rows.Next() {
 		order := ""
 		err = rows.Scan(&order)
 		if err != nil {
-			return res, errors_api.NewAPIError(err, "error during scan", http.StatusInternalServerError)
+			return res, fmt.Errorf("%s %w", errors_api.ErrorScanQuery.Error(), err)
 		}
 		res = append(res, order)
 
@@ -443,22 +369,22 @@ func (s *Store) UpdateNotProcessedOrders(order, status string, accrual float32) 
 
 	tx, err := s.DB.BeginTx(ctx, nil)
 	if err != nil {
-		return errors_api.NewAPIError(err, "error during begin tx", http.StatusInternalServerError)
+		return fmt.Errorf("%s %w", errors_api.ErrorBeginTx.Error(), err)
 	}
 	defer tx.Rollback()
 
 	stmt, err := tx.PrepareContext(ctx, sql)
 	if err != nil {
-		return errors_api.NewAPIError(err, "error during prepare", http.StatusInternalServerError)
+		return fmt.Errorf("%s %w", errors_api.ErrorPrepareQuery.Error(), err)
 	}
 
 	_, err = stmt.ExecContext(ctx, order, status, accrual)
 	if err != nil {
-		return errors_api.NewAPIError(err, "error during execute", http.StatusInternalServerError)
+		return fmt.Errorf("%s %w", errors_api.ErrorExecQuery.Error(), err)
 	}
 
 	if err = tx.Commit(); err != nil {
-		return errors_api.NewAPIError(err, "error commit during update order", http.StatusInternalServerError)
+		return fmt.Errorf("%s %w", errors_api.ErrorExecCommit.Error(), err)
 	}
 
 	return nil

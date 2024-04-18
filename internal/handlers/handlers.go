@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	errors_api "github.com/closable/go-yandex-loyalty/internal/errors"
+	errorsapi "github.com/closable/go-yandex-loyalty/internal/errors"
 	"github.com/closable/go-yandex-loyalty/internal/utils"
 	"github.com/closable/go-yandex-loyalty/models"
 	"go.uber.org/zap"
@@ -85,31 +85,29 @@ func (ah *APIHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 	req := &RegisterRequest{}
 	if err = json.Unmarshal(body, req); err != nil {
-		fmt.Println("Err body")
+		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", err)
 		w.WriteHeader(http.StatusInternalServerError) // think about
 		return
 	}
 
 	if err := ah.db.ValidateRegisterInfo(req.Login, req.Password); err != nil {
-		httpErr, ok := err.(*errors_api.APIHandlerError)
-		if ok {
-			ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", err)
-			w.WriteHeader(httpErr.Code())
+		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", err)
+
+		if errors.Is(errorsapi.ErrorConflict, err) {
+			w.WriteHeader(http.StatusConflict)
+		} else if errors.Is(errorsapi.ErrorRegInfo, err) {
+			w.WriteHeader(http.StatusBadRequest)
 		} else {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
+
 		return
 	}
 
 	err = ah.db.AddUser(req.Login, req.Password)
 	if err != nil {
-		httpErr, ok := err.(*errors_api.APIHandlerError)
-		if ok {
-			ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", err)
-			w.WriteHeader(httpErr.Code())
-		} else {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -127,8 +125,10 @@ func (ah *APIHandler) Register(w http.ResponseWriter, r *http.Request) {
 func LoginAction(w http.ResponseWriter, ah *APIHandler, login, pass string) (int, int) {
 	userID, err := ah.db.Login(login, pass)
 	if err != nil {
-		httpErr, _ := err.(*errors_api.APIHandlerError)
-		return 0, httpErr.Code()
+		if errors.Is(err, errorsapi.ErrorRegInfo) {
+			return 0, http.StatusBadRequest
+		}
+		return 0, http.StatusInternalServerError
 	}
 
 	token, err := utils.BuildJWTString(userID)
@@ -168,30 +168,11 @@ func (ah *APIHandler) Login(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(status)
 		return
 	}
-	// userID, err := ah.db.Login(req.Login, req.Password)
-	// if err != nil {
-	// 	httpErr, ok := err.(*errors_api.APIHandlerError)
-	// 	if ok {
-	// 		w.WriteHeader(httpErr.Code())
-	// 	}
-	// 	return
-	// }
 
-	// token, err := utils.BuildJWTString(userID)
-	// if err != nil {
-	// 	w.WriteHeader(http.StatusInternalServerError)
-	// 	return
-	// }
-
-	// w.Header().Add("Authorization", token)
-	// cookie := http.Cookie{
-	// 	Name:    "Authorization",
-	// 	Expires: time.Now().Add(utils.TokenEXP),
-	// 	Value:   token,
-	// }
-	// http.SetCookie(w, &cookie)
-
-	//fmt.Println(userID)
+	if userID == 0 {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
 	ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description userID", userID)
 
 	w.WriteHeader(http.StatusOK)
