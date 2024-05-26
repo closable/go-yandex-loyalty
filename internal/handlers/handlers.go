@@ -177,16 +177,18 @@ func LoginAction(w http.ResponseWriter, ah *APIHandler, login, pass string) (int
 	return userID, 0
 }
 
-// @Summary		Login
-// @Description	Login
-// @ID Login
-// @Accept		json
-// @Produce		json
-// @Param request body RegisterRequest true "Requst user data"
-// @Success		200		{string}	string			"ok"
-// @Failure		400		{string}	string	"Bad request"
-// @Failure		500		{string}	string	"Internal server error"
-// @Router			/api/user/login [post]
+// Аутентификация
+//
+//	@Summary		Login
+//	@Description	Login
+//	@ID Login
+//	@Accept		json
+//	@Produce		json
+//	@Param request body RegisterRequest true "Requst user data"
+//	@Success		200		{string}	string			"ok"
+//	@Failure		400		{string}	string	"Bad request"
+//	@Failure		500		{string}	string	"Internal server error"
+//	@Router			/api/user/login [post]
 func (ah *APIHandler) Login(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
