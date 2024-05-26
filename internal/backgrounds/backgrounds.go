@@ -1,3 +1,4 @@
+// Пакет для реализации синронизации закзов с аккруал системой
 package backgrounds
 
 import (
@@ -9,6 +10,12 @@ import (
 	"go.uber.org/zap"
 )
 
+// Функция предназначена для минхронизации состояния заказов между приложением и системой accruals
+//
+//	паметрами являются
+//	db *db.Store указатель на активную систему хранения информации
+//	acc string строка подключения к accrual системе
+//	orders ...string  список необработанных заказов
 func SyncAccruals(db *db.Store, acc string, sugar *zap.SugaredLogger, orders ...string) {
 	var wg sync.WaitGroup
 

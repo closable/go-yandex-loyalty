@@ -14,6 +14,19 @@ import (
 	"go.uber.org/zap"
 )
 
+// Перечеь заказов пользователя
+//
+//	@Summary		Get orders
+//	@Description	get orders by userID
+//	@Accept		json
+//	@Produce		json
+//	@Security ApiKeyAuth
+//	@Security OAuth2Application[write, admin]
+//	@Success		200		{array}	models.OrdersDB			"ok"
+//	@Failure		201		{string}	string	"No content!!"
+//	@Failure		400		{string}	string	"Bad request!!"
+//	@Failure		500		{string}	string	"Internal server error"
+//	@Router			/api/user/orders [get]
 func (ah *APIHandler) Orders(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	//userID := 6
@@ -75,6 +88,7 @@ func (ah *APIHandler) Orders(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(resp))
 }
 
+// Вспомогательная функция для построения списка заказов
 func makeOrderItem(ordNumb, status string, accrual float32, uploadAt string) Orders {
 	var res = &Orders{
 		Number:   ordNumb,
@@ -85,6 +99,15 @@ func makeOrderItem(ordNumb, status string, accrual float32, uploadAt string) Ord
 	return *res
 }
 
+// Запрос баланса
+//
+//	@Summary		Get balace
+//	@Description	get balance by userID
+//	@Accept		json
+//	@Produce		json
+//	@Success		200		{object}	models.WithdrawDB			"ok"
+//	@Failure		500		{string}	string	"Internal server error"
+//	@Router			/api/user/balance [get]
 func (ah *APIHandler) Balance(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	userID, _ := strconv.Atoi(r.FormValue("userID"))
@@ -136,6 +159,18 @@ func (ah *APIHandler) Balance(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(resp))
 }
 
+// Добавление нового заказа
+//
+//	@Summary		Add Order
+//	@Description	Add order by userID
+//	@ID AddOrder
+//	@Accept		text/plain
+//	@Produce		text/plain
+//	@Param order body string true "Order number"
+//	@Success		200		{string}	string			"ok"
+//	@Failure		400		{string}	string	"Bad request"
+//	@Failure		500		{string}	string	"Internal server error"
+//	@Router			/api/user/orders [post]
 func (ah *APIHandler) AddOrder(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
 
@@ -208,6 +243,17 @@ func (ah *APIHandler) AddOrder(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
 }
 
+// Сохранение запроса списания баллов
+//
+//	@Summary		Set Withdraw
+//	@Description	Set Withdrawa by userID
+//	@Accept		json
+//	@Produce		json
+//	@Param data body  models.WithdrawGet true "Params"
+//	@Success		200		{string}	string			"ok"
+//	@Failure		201		{string}	string	"No content"
+//	@Failure		500		{string}	string	"Internal server error"
+//	@Router			/api/user/balance/withdraw [post]
 func (ah *APIHandler) GetWithdraw(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	userID, _ := strconv.Atoi(r.FormValue("userID"))
@@ -280,6 +326,18 @@ func (ah *APIHandler) GetWithdraw(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// Запрос всех списаний пользователя
+//
+//	@Summary		Get Withdrawals
+//	@Description	get Withdrawals by userID
+//	@Accept		json
+//	@Produce		json
+//	@Security ApiKeyAuth
+//	@Security OAuth2Application[write, admin]
+//	@Success		200		{array}	models.Withdraw			"ok"
+//	@Failure		201		{string}	string	"No content"
+//	@Failure		500		{string}	string	"Internal server error"
+//	@Router			/api/user/withdrawals [get]
 func (ah *APIHandler) Withdrawals(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	userID, _ := strconv.Atoi(r.FormValue("userID"))
@@ -338,6 +396,7 @@ func (ah *APIHandler) Withdrawals(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(resp))
 }
 
+// Вспомогательная функция для подготовки единицы списания
 func makeWithdrawItem(ordNumb string, sum float32, processedAt string) Withdraw {
 	var res = &Withdraw{
 		Order:       ordNumb,
@@ -347,6 +406,7 @@ func makeWithdrawItem(ordNumb string, sum float32, processedAt string) Withdraw 
 	return *res
 }
 
+// Вспомогательная функция для синхронизации заказов между приложением и accrual системой
 func AccrualActions(orderNumber string, sugar *zap.SugaredLogger, accAddress string) (*models.AccrualGet, int) {
 
 	client := &http.Client{}

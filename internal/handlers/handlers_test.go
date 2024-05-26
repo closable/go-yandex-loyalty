@@ -139,3 +139,44 @@ func TestAPIHandler_Login(t *testing.T) {
 		}
 	}
 }
+
+func ExampleAPIHandler_Login() {
+	if len(dsn) == 0 {
+		initDSN()
+	}
+	src, _ := db.NewDB(dsn)
+	logger := NewLogger()
+	sugar := *logger.Sugar()
+	ah, _ := New(src, sugar, acc)
+
+	// statusCode := http.StatusOK
+	bodyReader := strings.NewReader(fmt.Sprintf(`{"login": "test%d", "password": "test%d"}`, 123, 123))
+	r := httptest.NewRequest("POST", "/api/user/login", bodyReader)
+	w := httptest.NewRecorder()
+
+	ah.Login(w, r)
+	fmt.Println(w.Code)
+
+	//Output
+	//200
+}
+
+func ExampleAPIHandler_Register() {
+	if len(dsn) == 0 {
+		initDSN()
+	}
+	src, _ := db.NewDB(dsn)
+	logger := NewLogger()
+	sugar := *logger.Sugar()
+	ah, _ := New(src, sugar, acc)
+
+	// statusCode := http.StatusOK
+	bodyReader := strings.NewReader(fmt.Sprintf(`{"login": "test%d", "password": "test%d"}`, 123, 123))
+	r := httptest.NewRequest("POST", "/api/user/login", bodyReader)
+	w := httptest.NewRecorder()
+
+	ah.Register(w, r)
+	fmt.Println(w.Code)
+	//Output
+	//200
+}
