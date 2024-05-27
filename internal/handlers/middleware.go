@@ -52,7 +52,7 @@ func (ah *APIHandler) Authenticator(h http.Handler) http.Handler {
 // Middleware для работы профилировщика pprof
 func Profiler() http.Handler {
 	r := chi.NewRouter()
-	// r.Use(NoCache)
+	//r.Use(NoCache)
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, r.RequestURI+"/pprof/", http.StatusMovedPermanently)

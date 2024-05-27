@@ -99,8 +99,6 @@ func makeOrderItem(ordNumb, status string, accrual float32, uploadAt string) Ord
 	return *res
 }
 
-// Запрос баланса
-//
 //	@Summary		Get balace
 //	@Description	get balance by userID
 //	@Accept		json
@@ -108,6 +106,8 @@ func makeOrderItem(ordNumb, status string, accrual float32, uploadAt string) Ord
 //	@Success		200		{object}	models.WithdrawDB			"ok"
 //	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/api/user/balance [get]
+//
+// Запрос баланса
 func (ah *APIHandler) Balance(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	userID, _ := strconv.Atoi(r.FormValue("userID"))
@@ -159,8 +159,6 @@ func (ah *APIHandler) Balance(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(resp))
 }
 
-// Добавление нового заказа
-//
 //	@Summary		Add Order
 //	@Description	Add order by userID
 //	@ID AddOrder
@@ -171,6 +169,8 @@ func (ah *APIHandler) Balance(w http.ResponseWriter, r *http.Request) {
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/api/user/orders [post]
+//
+// Добавление нового заказа
 func (ah *APIHandler) AddOrder(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
 
@@ -243,8 +243,6 @@ func (ah *APIHandler) AddOrder(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
 }
 
-// Сохранение запроса списания баллов
-//
 //	@Summary		Set Withdraw
 //	@Description	Set Withdrawa by userID
 //	@Accept		json
@@ -254,6 +252,8 @@ func (ah *APIHandler) AddOrder(w http.ResponseWriter, r *http.Request) {
 //	@Failure		201		{string}	string	"No content"
 //	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/api/user/balance/withdraw [post]
+//
+// Сохранение запроса списания баллов
 func (ah *APIHandler) GetWithdraw(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	userID, _ := strconv.Atoi(r.FormValue("userID"))
@@ -326,8 +326,6 @@ func (ah *APIHandler) GetWithdraw(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// Запрос всех списаний пользователя
-//
 //	@Summary		Get Withdrawals
 //	@Description	get Withdrawals by userID
 //	@Accept		json
@@ -338,6 +336,8 @@ func (ah *APIHandler) GetWithdraw(w http.ResponseWriter, r *http.Request) {
 //	@Failure		201		{string}	string	"No content"
 //	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/api/user/withdrawals [get]
+//
+// Запрос всех списаний пользователя
 func (ah *APIHandler) Withdrawals(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	userID, _ := strconv.Atoi(r.FormValue("userID"))

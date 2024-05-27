@@ -47,6 +47,7 @@ func GetUserID(tokenString string) int {
 	// создаём экземпляр структуры с утверждениями
 	claims := &Claims{}
 	// парсим из строки токена tokenString в структуру claims
+	// time.Sleep(time.Second * 4)
 	jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (interface{}, error) {
 		return []byte(SecretKEY), nil
 	})

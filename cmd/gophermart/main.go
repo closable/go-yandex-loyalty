@@ -55,7 +55,7 @@ func run() error {
 		os.Exit(1)
 	}
 
-	ticker := time.NewTicker(500 * time.Second)
+	ticker := time.NewTicker(10 * time.Second)
 	done := make(chan bool)
 	go func() {
 		for {

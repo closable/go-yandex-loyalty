@@ -89,8 +89,6 @@ func New(src Sourcer, sugar zap.SugaredLogger, accAddress string) (*APIHandler, 
 	}, nil
 }
 
-// Регистрация нового пользователя
-//
 //	@Summary		Register
 //	@Description	Register new user
 //	@ID RegisterNewUser
@@ -101,6 +99,8 @@ func New(src Sourcer, sugar zap.SugaredLogger, accAddress string) (*APIHandler, 
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/api/user/register [post]
+//
+// Регистрация нового пользователя
 func (ah *APIHandler) Register(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -177,8 +177,6 @@ func LoginAction(w http.ResponseWriter, ah *APIHandler, login, pass string) (int
 	return userID, 0
 }
 
-// Аутентификация
-//
 //	@Summary		Login
 //	@Description	Login
 //	@ID Login
@@ -189,6 +187,8 @@ func LoginAction(w http.ResponseWriter, ah *APIHandler, login, pass string) (int
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/api/user/login [post]
+//
+// Аутентификация пользователя
 func (ah *APIHandler) Login(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
