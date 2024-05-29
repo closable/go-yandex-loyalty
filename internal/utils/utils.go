@@ -1,3 +1,4 @@
+// Пакет реализующий сервисные функции приложения
 package utils
 
 import (
@@ -12,11 +13,13 @@ import (
 const TokenEXP = time.Hour * 3
 const SecretKEY = "*Hello-World*"
 
+// Структура описания JWT токена
 type Claims struct {
 	jwt.RegisteredClaims
 	UserID int
 }
 
+// Функция строитель строки JWT токена, с использованием ID пользователя
 func BuildJWTString(userID int) (string, error) {
 	// создаём новый токен с алгоритмом подписи HS256 и утверждениями — Claims
 
@@ -39,10 +42,12 @@ func BuildJWTString(userID int) (string, error) {
 	return tokenString, nil
 }
 
+// Функция парсер JWT токена, для получения ID пользователя
 func GetUserID(tokenString string) int {
 	// создаём экземпляр структуры с утверждениями
 	claims := &Claims{}
 	// парсим из строки токена tokenString в структуру claims
+	// time.Sleep(time.Second * 4)
 	jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (interface{}, error) {
 		return []byte(SecretKEY), nil
 	})
@@ -51,6 +56,7 @@ func GetUserID(tokenString string) int {
 	return claims.UserID
 }
 
+// Функция проверки номера заказа на удовлетворения алгоритма Luhna
 func CheckOrderByLuna(orderNum string) bool {
 	sum := 0
 	//var digits = make([]int, len(orderNum))
@@ -72,6 +78,7 @@ func CheckOrderByLuna(orderNum string) bool {
 	return int(sum%10) == 0
 }
 
+// Простой генератор номера заказа
 func SillyGenerateOrderNumberLuhna(length int) string {
 	order := ""
 	for {

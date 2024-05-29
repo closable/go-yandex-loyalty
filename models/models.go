@@ -1,39 +1,67 @@
+// Пакет консолидации моделей приложения
 package models
 
 type (
+	// Структура заказ
 	OrdersDB struct {
+		// Заказ
 		OrderNumber string
-		Status      string
-		Accrual     float32
-		UploadAt    string
+		// Статус
+		Status string
+		// Кол-во баллов
+		Accrual float32
+		// Загружено
+		UploadAt string
 	}
+	// Структура запроса заказа
 	Orders struct {
-		Number   string  `json:"number"`
-		Status   string  `json:"status"`
-		Accrual  float32 `json:"accrual"`
-		UploadAt string  `json:"upload_at"`
+		// Заказ
+		Number string `json:"number"`
+		// Статус
+		Status string `json:"status"`
+		// Кол-во баллов
+		Accrual float32 `json:"accrual"`
+		// Загоужено
+		UploadAt string `json:"upload_at"`
 	}
+	// Структра баланса
 	WithdrawDB struct {
-		Current   float32
+		// Текущий
+		Current float32
+		// Всего баллов
 		Withdrawn float32
 	}
+	//Структура запроса списания
 	WithdrawGet struct {
-		Order string  `json:"order"`
-		Sum   float32 `json:"sum"`
+		// Заказ
+		Order string `json:"order"`
+		// Сумма списания
+		Sum float32 `json:"sum"`
 	}
+	// Структура едиицы хранения списаний
 	Withdraw struct {
-		Order       string  `json:"order"`
-		Sum         float32 `json:"sum"`
-		ProcessedAt string  `json:"processed_at"`
+		//Заказ
+		Order string `json:"order"`
+		// Сумма
+		Sum float32 `json:"sum"`
+		// Обработано
+		ProcessedAt string `json:"processed_at"`
 	}
 	WithdrawGetDB struct {
-		Order       string
-		Sum         float32
+		//Заказ
+		Order string
+		//Суммаа
+		Sum float32
+		//Обработано
 		ProcessedAt string
 	}
+	// Запрос состояния
 	AccrualGet struct {
-		Order   string  `json:"order"`
-		Status  string  `json:"status"`
+		// Заказ
+		Order string `json:"order"`
+		// Статус
+		Status string `json:"status"`
+		// Сумма
 		Accrual float32 `json:"accrual"`
 	}
 )

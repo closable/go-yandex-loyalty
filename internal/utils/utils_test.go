@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -62,4 +63,29 @@ func TestGetUserID(t *testing.T) {
 			}
 		})
 	}
+}
+
+func ExampleGetUserID() {
+	tokenString := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTI3MzgzOTAsIlVzZXJJRCI6NH0.V9WdWdJWeU1qqVCGDfTGu0asPZhiFUPmtnsfpN0GPro"
+	//userID := 5
+	out1 := GetUserID(tokenString)
+	fmt.Println(out1)
+
+	//Output
+	//5
+
+}
+
+func ExampleCheckOrderByLuna() {
+	order1 := "1004128237584"
+	out1 := CheckOrderByLuna(order1)
+	fmt.Println(out1)
+
+	order2 := "100412823758"
+	out2 := CheckOrderByLuna(order2)
+	fmt.Println(out2)
+
+	//Output
+	//True
+	//Fase
 }

@@ -1,0 +1,260 @@
+basePath: /
+definitions:
+  handlers.RegisterRequest:
+    properties:
+      login:
+        type: string
+      password:
+        type: string
+    type: object
+  models.OrdersDB:
+    properties:
+      accrual:
+        description: Кол-во баллов
+        type: number
+      orderNumber:
+        description: Заказ
+        type: string
+      status:
+        description: Статус
+        type: string
+      uploadAt:
+        description: Загружено
+        type: string
+    type: object
+  models.Withdraw:
+    properties:
+      order:
+        description: Заказ
+        type: string
+      processed_at:
+        description: Обработано
+        type: string
+      sum:
+        description: Сумма
+        type: number
+    type: object
+  models.WithdrawDB:
+    properties:
+      current:
+        description: Текущий
+        type: number
+      withdrawn:
+        description: Всего баллов
+        type: number
+    type: object
+  models.WithdrawGet:
+    properties:
+      order:
+        description: Заказ
+        type: string
+      sum:
+        description: Сумма списания
+        type: number
+    type: object
+host: 127.0.0.1:8090
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: This is a sample server Gophermart server.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Gophermart loyalty system API
+  version: "1.0"
+paths:
+  /api/user/balance:
+    get:
+      consumes:
+      - application/json
+      description: get balance by userID
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ok
+          schema:
+            $ref: '#/definitions/models.WithdrawDB'
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Get balace
+  /api/user/balance/withdraw:
+    post:
+      consumes:
+      - application/json
+      description: Set Withdrawa by userID
+      parameters:
+      - description: Params
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.WithdrawGet'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ok
+          schema:
+            type: string
+        "201":
+          description: No content
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Set Withdraw
+  /api/user/login:
+    post:
+      consumes:
+      - application/json
+      description: Login
+      operationId: Login
+      parameters:
+      - description: Requst user data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ok
+          schema:
+            type: string
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Login
+  /api/user/orders:
+    get:
+      consumes:
+      - application/json
+      description: get orders by userID
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ok
+          schema:
+            items:
+              $ref: '#/definitions/models.OrdersDB'
+            type: array
+        "201":
+          description: No content!!
+          schema:
+            type: string
+        "400":
+          description: Bad request!!
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      - OAuth2Application:
+        - write
+        - admin
+      summary: Get orders
+    post:
+      consumes:
+      - text/plain
+      description: Add order by userID
+      operationId: AddOrder
+      parameters:
+      - description: Order number
+        in: body
+        name: order
+        required: true
+        schema:
+          type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: ok
+          schema:
+            type: string
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Add Order
+  /api/user/register:
+    post:
+      consumes:
+      - application/json
+      description: Register new user
+      operationId: RegisterNewUser
+      parameters:
+      - description: Requst user data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ok
+          schema:
+            type: string
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Register
+  /api/user/withdrawals:
+    get:
+      consumes:
+      - application/json
+      description: get Withdrawals by userID
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ok
+          schema:
+            items:
+              $ref: '#/definitions/models.Withdraw'
+            type: array
+        "201":
+          description: No content
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      - OAuth2Application:
+        - write
+        - admin
+      summary: Get Withdrawals
+swagger: "2.0"

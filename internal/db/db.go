@@ -1,3 +1,4 @@
+// Пакет для работы с СУБД, реализующий необходимый функционал для работы приложения
 package db
 
 import (
@@ -11,10 +12,12 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
+// Структура систмы храненя информации
 type Store struct {
 	DB *sql.DB
 }
 
+// Функция создания экземпляра СУБД
 func NewDB(connstring string) (*Store, error) {
 	db, err := sql.Open("pgx", connstring)
 	if err != nil {
@@ -25,6 +28,7 @@ func NewDB(connstring string) (*Store, error) {
 	}, nil
 }
 
+// Функция для подучения connection к СУБД
 func (s *Store) GetConn() (*sql.Conn, error) {
 	ctx := context.Background()
 	conn, err := s.DB.Conn(ctx)
@@ -32,6 +36,7 @@ func (s *Store) GetConn() (*sql.Conn, error) {
 	return conn, err
 }
 
+// Функция проверки полноты заполнения информации о пользователе
 func (s *Store) ValidateRegisterInfo(login, pass string) error {
 	// invaid registerinformation
 	if len(login) == 0 || len(pass) == 0 {
@@ -61,6 +66,7 @@ func (s *Store) ValidateRegisterInfo(login, pass string) error {
 	return nil
 }
 
+// Функция добавления нового пользователя
 func (s *Store) AddUser(login, pass string) error {
 	sql := "insert into ya.users (user_name, user_passw, status) values ($1, sha256($2)::text, true)"
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
@@ -89,6 +95,7 @@ func (s *Store) AddUser(login, pass string) error {
 	return nil
 }
 
+// Функция аутентфикации пользователя
 func (s *Store) Login(login, pass string) (int, error) {
 	sqlString := `
 	select user_id  
@@ -118,6 +125,7 @@ func (s *Store) Login(login, pass string) (int, error) {
 	return userID, nil
 }
 
+// Функция получения списка заказов по userID
 func (s *Store) GetOrders(userID int) ([]models.OrdersDB, error) {
 	sql := `
 	select order_number, status, accrual, uploaded_at
@@ -149,6 +157,7 @@ func (s *Store) GetOrders(userID int) ([]models.OrdersDB, error) {
 	return res, nil
 }
 
+// Функция получеиня баланса
 func (s *Store) Balance(userID int) (float32, float32, error) {
 	sql := `
 	select coalesce(sum(o.accrual),0) current, coalesce((select sum(w.sum) from ya.withdrawals w where user_id=$1),0) withdrawn
@@ -173,6 +182,7 @@ func (s *Store) Balance(userID int) (float32, float32, error) {
 	return current, withdrawn, nil
 }
 
+// Фукция добавления заказа пользователя
 func (s *Store) AddOrder(userID int, orderNumber, accStatus string, accrual float32) error {
 	sqlString := `
 	select 
@@ -235,6 +245,7 @@ func (s *Store) AddOrder(userID int, orderNumber, accStatus string, accrual floa
 	return nil
 }
 
+// Функция запрос списания баллов/сумм по пользователь
 func (s *Store) AddWithdraw(userID int, orderNumber string, sum float32) error {
 	sql := `insert into ya.withdrawals (user_id, order_number, sum, processed_at) values ($1, $2, $3, now())`
 
@@ -264,6 +275,7 @@ func (s *Store) AddWithdraw(userID int, orderNumber string, sum float32) error {
 	return nil
 }
 
+// Функция запрос на получение всех списаний баллов/сумм
 func (s *Store) GetWithdrawals(userID int) ([]models.WithdrawGetDB, error) {
 	sql := `select w.order_number, w.sum, w.processed_at from ya.withdrawals w where w.user_id=$1`
 
@@ -293,6 +305,7 @@ func (s *Store) GetWithdrawals(userID int) ([]models.WithdrawGetDB, error) {
 	return res, nil
 }
 
+// Сервисная функция, реализующая первоначальное состояние таблиц данных
 func (s *Store) PrepareDB() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
@@ -337,6 +350,7 @@ func (s *Store) PrepareDB() error {
 	return nil
 }
 
+// Сервисная функция для выборки всех необработанных заказов для дальнейшей синхронизации с accrual системой
 func (s *Store) NotProcessedOrders() ([]string, error) {
 	sql := `select order_number from ya.orders where status not in ('INVALID', 'PROCESSED')`
 

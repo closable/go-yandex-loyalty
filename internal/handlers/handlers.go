@@ -1,3 +1,4 @@
+// Пакет для работы handlers
 package handlers
 
 import (
@@ -14,39 +15,53 @@ import (
 	"go.uber.org/zap"
 )
 
+// Интерфейс для реализации функционала
 type Sourcer interface {
+	// Валидация данных пользователя
 	ValidateRegisterInfo(login, pass string) error
+	// Добавление пользователя
 	AddUser(login, pass string) error
+	// утентификация пользователя
 	Login(login, pass string) (int, error)
+	// Перечеь заказов пользователя
 	GetOrders(userID int) ([]models.OrdersDB, error)
-	// Balance(userID int) (models.WithdrawDB, error)
+	// Баланс
 	Balance(userID int) (float32, float32, error)
+	// Добавление заказа
 	AddOrder(userID int, orderNumber, accStatus string, accrual float32) error
+	// Добавление списания доступных баллов/рублей
 	AddWithdraw(userID int, orderNumber string, sum float32) error
+	// Перечент всех списаний
 	GetWithdrawals(userID int) ([]models.WithdrawGetDB, error)
+	// Подготовка первичного состояния системы хранения данных
 	PrepareDB() error
 }
 
 type (
+	// Структура АПИ
 	APIHandler struct {
 		db         Sourcer
 		sugar      zap.SugaredLogger
 		accAddress string
 	}
+	// Запрос регистрации
 	RegisterRequest struct {
 		Login    string `json:"login"`
 		Password string `json:"password"`
 	}
+	// Номер заказа
 	Orders struct {
 		Number   string  `json:"number"`
 		Status   string  `json:"status"`
 		Accrual  float32 `json:"accrual"`
 		UploadAt string  `json:"upload_at"`
 	}
+	// Запрос списания
 	WithdrawGet struct {
 		Order string  `json:"order"`
 		Sum   float32 `json:"sum"`
 	}
+	// Единица списания баллов
 	Withdraw struct {
 		Order       string  `json:"order"`
 		Sum         float32 `json:"sum"`
@@ -54,6 +69,7 @@ type (
 	}
 )
 
+// Подготовка СУБД и создание экземпляра хранения
 func New(src Sourcer, sugar zap.SugaredLogger, accAddress string) (*APIHandler, error) {
 	// prepare db
 	err := src.PrepareDB()
@@ -73,6 +89,18 @@ func New(src Sourcer, sugar zap.SugaredLogger, accAddress string) (*APIHandler, 
 	}, nil
 }
 
+//	@Summary		Register
+//	@Description	Register new user
+//	@ID RegisterNewUser
+//	@Accept		json
+//	@Produce		json
+//	@Param request body RegisterRequest true "Requst user data"
+//	@Success		200		{string}	string			"ok"
+//	@Failure		400		{string}	string	"Bad request"
+//	@Failure		500		{string}	string	"Internal server error"
+//	@Router			/api/user/register [post]
+//
+// Регистрация нового пользователя
 func (ah *APIHandler) Register(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -122,6 +150,9 @@ func (ah *APIHandler) Register(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// Сервисная функция для перепроверки токена аутентификация
+// используется для дополнительной проверки, если вдруг middleware
+// по какой-либо причине пропустит корректную обработку
 func LoginAction(w http.ResponseWriter, ah *APIHandler, login, pass string) (int, int) {
 	userID, err := ah.db.Login(login, pass)
 	if err != nil {
@@ -146,6 +177,18 @@ func LoginAction(w http.ResponseWriter, ah *APIHandler, login, pass string) (int
 	return userID, 0
 }
 
+//	@Summary		Login
+//	@Description	Login
+//	@ID Login
+//	@Accept		json
+//	@Produce		json
+//	@Param request body RegisterRequest true "Requst user data"
+//	@Success		200		{string}	string			"ok"
+//	@Failure		400		{string}	string	"Bad request"
+//	@Failure		500		{string}	string	"Internal server error"
+//	@Router			/api/user/login [post]
+//
+// Аутентификация пользователя
 func (ah *APIHandler) Login(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
