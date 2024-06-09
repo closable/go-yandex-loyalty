@@ -14,7 +14,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// Перечеь заказов пользователя
+// Orders Перечеь заказов пользователя
 //
 //	@Summary		Get orders
 //	@Description	get orders by userID
@@ -99,6 +99,8 @@ func makeOrderItem(ordNumb, status string, accrual float32, uploadAt string) Ord
 	return *res
 }
 
+// Balance Запрос баланса
+//
 //	@Summary		Get balace
 //	@Description	get balance by userID
 //	@Accept		json
@@ -106,8 +108,6 @@ func makeOrderItem(ordNumb, status string, accrual float32, uploadAt string) Ord
 //	@Success		200		{object}	models.WithdrawDB			"ok"
 //	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/api/user/balance [get]
-//
-// Запрос баланса
 func (ah *APIHandler) Balance(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	userID, _ := strconv.Atoi(r.FormValue("userID"))
@@ -159,6 +159,8 @@ func (ah *APIHandler) Balance(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(resp))
 }
 
+// AddOrder Добавление нового заказа
+//
 //	@Summary		Add Order
 //	@Description	Add order by userID
 //	@ID AddOrder
@@ -169,8 +171,6 @@ func (ah *APIHandler) Balance(w http.ResponseWriter, r *http.Request) {
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/api/user/orders [post]
-//
-// Добавление нового заказа
 func (ah *APIHandler) AddOrder(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
 
@@ -243,6 +243,8 @@ func (ah *APIHandler) AddOrder(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
 }
 
+// GetWithdraw Сохранение запроса списания баллов
+//
 //	@Summary		Set Withdraw
 //	@Description	Set Withdrawa by userID
 //	@Accept		json
@@ -252,8 +254,6 @@ func (ah *APIHandler) AddOrder(w http.ResponseWriter, r *http.Request) {
 //	@Failure		201		{string}	string	"No content"
 //	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/api/user/balance/withdraw [post]
-//
-// Сохранение запроса списания баллов
 func (ah *APIHandler) GetWithdraw(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	userID, _ := strconv.Atoi(r.FormValue("userID"))
@@ -326,7 +326,9 @@ func (ah *APIHandler) GetWithdraw(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-//	@Summary		Get Withdrawals
+// Withdrawals Запрос всех списаний пользователя
+//
+//	@Summary		get Withdrawals
 //	@Description	get Withdrawals by userID
 //	@Accept		json
 //	@Produce		json
@@ -336,8 +338,6 @@ func (ah *APIHandler) GetWithdraw(w http.ResponseWriter, r *http.Request) {
 //	@Failure		201		{string}	string	"No content"
 //	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/api/user/withdrawals [get]
-//
-// Запрос всех списаний пользователя
 func (ah *APIHandler) Withdrawals(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	userID, _ := strconv.Atoi(r.FormValue("userID"))
@@ -406,7 +406,7 @@ func makeWithdrawItem(ordNumb string, sum float32, processedAt string) Withdraw 
 	return *res
 }
 
-// Вспомогательная функция для синхронизации заказов между приложением и accrual системой
+// AccrualActions Вспомогательная функция для синхронизации заказов между приложением и accrual системой
 func AccrualActions(orderNumber string, sugar *zap.SugaredLogger, accAddress string) (*models.AccrualGet, int) {
 
 	client := &http.Client{}

@@ -11,7 +11,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-// Middleware для контроля за аутентифированными пользователями
+// Authenticator для контроля за аутентифированными пользователями
 func (ah *APIHandler) Authenticator(h http.Handler) http.Handler {
 	auth := func(w http.ResponseWriter, r *http.Request) {
 
@@ -49,7 +49,7 @@ func (ah *APIHandler) Authenticator(h http.Handler) http.Handler {
 	return http.HandlerFunc(auth)
 }
 
-// Middleware для работы профилировщика pprof
+// Profiler для работы профилировщика pprof
 func Profiler() http.Handler {
 	r := chi.NewRouter()
 	//r.Use(NoCache)

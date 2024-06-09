@@ -1,4 +1,4 @@
-// Пакет для работы handlers
+// Package handlers пакет для работы handlers
 package handlers
 
 import (
@@ -15,7 +15,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// Интерфейс для реализации функционала
+// Sourcer Интерфейс для реализации функционала
 type Sourcer interface {
 	// Валидация данных пользователя
 	ValidateRegisterInfo(login, pass string) error
@@ -38,30 +38,30 @@ type Sourcer interface {
 }
 
 type (
-	// Структура АПИ
+	// APIHandler Структура АПИ
 	APIHandler struct {
 		db         Sourcer
 		sugar      zap.SugaredLogger
 		accAddress string
 	}
-	// Запрос регистрации
+	//RegisterRequest Запрос регистрации
 	RegisterRequest struct {
 		Login    string `json:"login"`
 		Password string `json:"password"`
 	}
-	// Номер заказа
+	// Orders Номер заказа
 	Orders struct {
 		Number   string  `json:"number"`
 		Status   string  `json:"status"`
 		Accrual  float32 `json:"accrual"`
 		UploadAt string  `json:"upload_at"`
 	}
-	// Запрос списания
+	// WithdrawGet Запрос списания
 	WithdrawGet struct {
 		Order string  `json:"order"`
 		Sum   float32 `json:"sum"`
 	}
-	// Единица списания баллов
+	// Withdraw Единица списания баллов
 	Withdraw struct {
 		Order       string  `json:"order"`
 		Sum         float32 `json:"sum"`
@@ -69,7 +69,7 @@ type (
 	}
 )
 
-// Подготовка СУБД и создание экземпляра хранения
+// New подготовка СУБД и создание экземпляра хранения
 func New(src Sourcer, sugar zap.SugaredLogger, accAddress string) (*APIHandler, error) {
 	// prepare db
 	err := src.PrepareDB()
@@ -89,6 +89,8 @@ func New(src Sourcer, sugar zap.SugaredLogger, accAddress string) (*APIHandler, 
 	}, nil
 }
 
+// Register Регистрация нового пользователя
+//
 //	@Summary		Register
 //	@Description	Register new user
 //	@ID RegisterNewUser
@@ -99,8 +101,6 @@ func New(src Sourcer, sugar zap.SugaredLogger, accAddress string) (*APIHandler, 
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/api/user/register [post]
-//
-// Регистрация нового пользователя
 func (ah *APIHandler) Register(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -118,7 +118,7 @@ func (ah *APIHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := ah.db.ValidateRegisterInfo(req.Login, req.Password); err != nil {
+	if err = ah.db.ValidateRegisterInfo(req.Login, req.Password); err != nil {
 		ah.sugar.Infoln("uri", r.RequestURI, "method", r.Method, "description", err)
 
 		if errors.Is(errorsapi.ErrorConflict, err) {
@@ -150,7 +150,7 @@ func (ah *APIHandler) Register(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// Сервисная функция для перепроверки токена аутентификация
+// LoginAction сервисная функция для перепроверки токена аутентификация
 // используется для дополнительной проверки, если вдруг middleware
 // по какой-либо причине пропустит корректную обработку
 func LoginAction(w http.ResponseWriter, ah *APIHandler, login, pass string) (int, int) {
@@ -177,6 +177,8 @@ func LoginAction(w http.ResponseWriter, ah *APIHandler, login, pass string) (int
 	return userID, 0
 }
 
+// Login аутентификация пользователя
+//
 //	@Summary		Login
 //	@Description	Login
 //	@ID Login
@@ -187,8 +189,6 @@ func LoginAction(w http.ResponseWriter, ah *APIHandler, login, pass string) (int
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/api/user/login [post]
-//
-// Аутентификация пользователя
 func (ah *APIHandler) Login(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
