@@ -30,7 +30,9 @@ var buildVersion, buildDate, buildCommit = "N/A", "N/A", "N/A"
 // @BasePath /
 // TODO swag init --output ./docs/ -g ./cmd/gophermart/main.go
 func main() {
-
+	// go run -ldflags "-X main.buildVersion=v1.0.1 -X 'main.buildDate=$(date +'%Y/%m/%d %H:%M:%S')'" cmd/gophermart/main.go
+	// go build -ldflags "-X main.buildVersion=v1.0.1 -X 'main.buildDate=$(date +'%Y/%m/%d %H:%M:%S')'" cmd/gophermart/main.go
+	// start bin file -> ./main
 	fmt.Printf("Build version:%s\nBuild date:%s\nBuild commit:%s\n", buildVersion, buildDate, buildCommit)
 	if err := run(); err != nil {
 		panic(err)
