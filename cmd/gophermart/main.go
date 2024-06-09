@@ -4,7 +4,6 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/closable/go-yandex-loyalty/internal/backgrounds"
@@ -12,6 +11,8 @@ import (
 	"github.com/closable/go-yandex-loyalty/internal/db"
 	"github.com/closable/go-yandex-loyalty/internal/handlers"
 )
+
+var buildVersion, buildDate, buildCommit = "N/A", "N/A", "N/A"
 
 // @title Gophermart loyalty system API
 // @version 1.0
@@ -29,6 +30,10 @@ import (
 // @BasePath /
 // TODO swag init --output ./docs/ -g ./cmd/gophermart/main.go
 func main() {
+	// go run -ldflags "-X main.buildVersion=v1.0.1 -X 'main.buildDate=$(date +'%Y/%m/%d %H:%M:%S')'" cmd/gophermart/main.go
+	// go build -ldflags "-X main.buildVersion=v1.0.1 -X 'main.buildDate=$(date +'%Y/%m/%d %H:%M:%S')'" cmd/gophermart/main.go
+	// start bin file -> ./main
+	fmt.Printf("Build version:%s\nBuild date:%s\nBuild commit:%s\n", buildVersion, buildDate, buildCommit)
 	if err := run(); err != nil {
 		panic(err)
 	}
@@ -45,14 +50,16 @@ func run() error {
 	src, err := db.NewDB(cfg.DSN) // cfg.DSN)
 	if err != nil {
 		sugar.Infoln(err)
-		os.Exit(1)
+		//os.Exit(1)
+		panic(err)
 	}
 
 	handler, err := handlers.New(src, sugar, cfg.AccrualAddress)
 	if err != nil {
 		sugar.Infoln(err)
 		src.DB.Close()
-		os.Exit(1)
+		//os.Exit(1)
+		panic(err)
 	}
 
 	ticker := time.NewTicker(10 * time.Second)

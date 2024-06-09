@@ -5,7 +5,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// Функция логгирования событий проихсходящих в приложении
+// NewLogger Функция логгирования событий проихсходящих в приложении
 func NewLogger() zap.Logger {
 	// add color level for convience
 	zapConfig := zap.NewDevelopmentConfig()

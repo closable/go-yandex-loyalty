@@ -6,7 +6,7 @@ import (
 	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
 
-// Инициализация маршрутов приложения
+// InitRouter Инициализация маршрутов приложения
 func (ah *APIHandler) InitRouter() chi.Router {
 	router := chi.NewRouter()
 
